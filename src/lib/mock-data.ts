@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { seedReports } from "@/lib/report-content";
 
 export type Project = {
   id: string;
@@ -195,6 +196,7 @@ export type ConsoleData = {
 };
 
 const initialData: ConsoleData = {
+  reports: seedReports,
   projects: [
     {
       id: "bartlesville-morton",
