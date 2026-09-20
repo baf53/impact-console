@@ -98,12 +98,40 @@ export type KnowledgeProgram = {
   attachments: ProgramAttachment[];
 };
 
+export type Citation = {
+  id: string;
+  number: number;
+  documentTitle: string;
+  issuingBody: string;
+  date: string;
+  page: string;
+  url?: string;
+  isPractitionerKnowledge: boolean;
+};
+
+export type AssistantMessage = {
+  role: "user" | "assistant";
+  text: string;
+  citations?: Citation[];
+};
+
+export type AssistantAnswer = {
+  id: string;
+  projectId: string;
+  projectLabel: string;
+  question: string;
+  coverage: "full" | "partial" | "thin";
+  messages: AssistantMessage[];
+  loggedAt?: string;
+};
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
   transcripts: Transcript[];
   extractions: ExtractionItem[];
   programsLibrary: KnowledgeProgram[];
+  answerLog: AssistantAnswer[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
