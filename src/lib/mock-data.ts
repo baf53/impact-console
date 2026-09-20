@@ -98,12 +98,40 @@ export type KnowledgeProgram = {
   attachments: ProgramAttachment[];
 };
 
+export type Citation = {
+  id: string;
+  number: number;
+  documentTitle: string;
+  issuingBody: string;
+  date: string;
+  page: string;
+  url?: string;
+  isPractitionerKnowledge: boolean;
+};
+
+export type AssistantMessage = {
+  role: "user" | "assistant";
+  text: string;
+  citations?: Citation[];
+};
+
+export type AssistantAnswer = {
+  id: string;
+  projectId: string;
+  projectLabel: string;
+  question: string;
+  coverage: "full" | "partial" | "thin";
+  messages: AssistantMessage[];
+  loggedAt?: string;
+};
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
   transcripts: Transcript[];
   extractions: ExtractionItem[];
   programsLibrary: KnowledgeProgram[];
+  answerLog: AssistantAnswer[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
@@ -636,6 +664,66 @@ const initialData: ConsoleData = {
       "contacts": [],
       "attachments": []
     }
+  ],
+  answerLog: [
+    {
+      id: "answer-1",
+      projectId: "bartlesville-morton",
+      projectLabel: "316 S Morton Ave, Bartlesville, OK",
+      question:
+        "What funding can I use to build affordable housing on this lot?",
+      coverage: "full",
+      messages: [
+        {
+          role: "user",
+          text: "What funding can I use to build affordable housing on this lot?",
+        },
+        {
+          role: "assistant",
+          text: "For 316 S Morton Ave in Bartlesville, the strongest fit is the Oklahoma Increased Housing Program (OHFA), which offers a 0% interest construction loan of up to $3 million or 85% of total development cost for rental projects of 5–200 units.[1] Because Bartlesville is a CDBG Small Cities community, site preparation and infrastructure can also be pursued through the Oklahoma Department of Commerce, but the City of Bartlesville must be the applicant of record—not the developer.[2][3] For a small two-duplex project, LIHTC layering is unlikely to pencil due to compliance cost, so keep the capital stack to OHFA plus CDBG Small Cities unless the unit count scales.[4]",
+          citations: [
+            {
+              id: "cite-1",
+              number: 1,
+              documentTitle: "Increased Housing Program Guidelines, PY2026",
+              issuingBody: "Oklahoma Housing Finance Agency",
+              date: "2026",
+              page: "pp. 4–11, §2.1 Eligible Applicants",
+              url: "https://www.ok.gov/ohfa",
+              isPractitionerKnowledge: false,
+            },
+            {
+              id: "cite-2",
+              number: 2,
+              documentTitle: "Oklahoma Small Cities CDBG Application Guide",
+              issuingBody: "Oklahoma Department of Commerce",
+              date: "2026",
+              page: "pp. 17–24, Eligible activities",
+              url: "https://www.okcommerce.gov",
+              isPractitionerKnowledge: false,
+            },
+            {
+              id: "cite-3",
+              number: 3,
+              documentTitle: "Practitioner note: Bartlesville CDBG Small Cities applicant",
+              issuingBody: "Collective Impact practitioner guidance",
+              date: "Sep 19, 2026",
+              page: "Bartlesville Housing Trust call",
+              isPractitionerKnowledge: true,
+            },
+            {
+              id: "cite-4",
+              number: 4,
+              documentTitle: "Practitioner note: LIHTC layering on small projects",
+              issuingBody: "Collective Impact practitioner guidance",
+              date: "Sep 19, 2026",
+              page: "Bartlesville Housing Trust call",
+              isPractitionerKnowledge: true,
+            },
+          ],
+        },
+      ],
+    },
   ],
   extractions: [
     {
