@@ -5,8 +5,8 @@ import {
   FileText,
   Loader2,
   Plus,
+  Info,
   Sparkles,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { consoleStore, useConsoleData, type Report } from "@/lib/mock-data";
@@ -400,7 +400,7 @@ function ReportView({ report }: { report: Report }) {
           ))}
         </ul>
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
-          <X className="h-3 w-3" />
+          <Info className="h-3 w-3" />
           Hover any citation number to see the full source and open it.
         </p>
       </Section>
