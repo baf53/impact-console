@@ -133,7 +133,7 @@ function ClientSitesPage() {
         </TabsList>
 
         <TabsContent value="sites" className="mt-6">
-          <div className={cn("gap-6", selected ? "grid xl:grid-cols-[1fr_400px]" : "block")}>
+          <div className={cn("gap-6", selected ? "grid xl:grid-cols-[minmax(0,1fr)_360px]" : "block")}>
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Subscribed sites</CardTitle>
