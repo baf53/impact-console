@@ -68,7 +68,7 @@ function ProgramRow({ program }: { program: KnowledgeProgram }) {
       <span className="truncate text-sm text-muted-foreground">{program.cities.join(", ")}</span>
       <CoverageMeter value={program.coverage} />
       <span className="flex items-center gap-1.5 text-sm text-muted-foreground tabular-nums">
-        <FileText className="size-3.5" aria-hidden="true" /> {program.documents.length} docs
+        <FileText className="size-3.5" aria-hidden="true" /> {program.documents.length} {program.documents.length === 1 ? "doc" : "docs"}
       </span>
       <ChevronRight className="hidden size-4 text-muted-foreground lg:block" aria-hidden="true" />
     </Link>
