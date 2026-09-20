@@ -64,7 +64,7 @@ function approveTranscript(transcript: Transcript) {
       {
         id: `activity-${Date.now()}`,
         action: "Transcript approved",
-        subject: transcript.projectLabel.split(",")[0],
+        subject: transcript.projectLabel.split(",")[0] ?? transcript.projectLabel,
         detail: `${transcript.programs.length} program references added to the knowledge base`,
         occurredAt: "Just now",
         status: "approved" as const,
