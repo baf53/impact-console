@@ -6,7 +6,6 @@ import {
   CheckSquare2,
   Database,
   FileClock,
-  FolderOpen,
   Landmark,
   LayoutDashboard,
   MessageSquareText,
