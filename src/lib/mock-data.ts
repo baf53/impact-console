@@ -115,6 +115,19 @@ export type AssistantMessage = {
   citations?: Citation[];
 };
 
+export type AnswerRating = "good" | "needs-work" | "wrong";
+
+export type FailureCause = "retrieval" | "prompt" | "not-loaded";
+
+export type RetrievedChunk = {
+  id: string;
+  documentTitle: string;
+  excerpt: string;
+  page: string;
+  score: number;
+  used: boolean;
+};
+
 export type AssistantAnswer = {
   id: string;
   projectId: string;
@@ -123,6 +136,24 @@ export type AssistantAnswer = {
   coverage: "full" | "partial" | "thin";
   messages: AssistantMessage[];
   loggedAt?: string;
+  askedOn?: string;
+  rating?: AnswerRating;
+  failureCause?: FailureCause;
+  reviewNote?: string;
+  retrievedChunks?: RetrievedChunk[];
+  promoted?: boolean;
+  isRefusal?: boolean;
+};
+
+export type GoldenEntry = {
+  id: string;
+  sourceAnswerId?: string;
+  projectLabel: string;
+  question: string;
+  expectedAnswer: string;
+  citations: string[];
+  addedOn: string;
+  lastCheck: "passing" | "failing";
 };
 
 export type ConsoleData = {
@@ -132,6 +163,7 @@ export type ConsoleData = {
   extractions: ExtractionItem[];
   programsLibrary: KnowledgeProgram[];
   answerLog: AssistantAnswer[];
+  goldenSet: GoldenEntry[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
