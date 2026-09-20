@@ -1,0 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { FileClock } from "lucide-react";
+import { PlaceholderPage } from "@/components/placeholder-page";
+export const Route = createFileRoute("/transcript-intake")({ head: () => ({ meta: [{ title: "Transcript Intake — Collective Impact" }, { name: "description", content: "Import and process housing funding transcripts." }, { property: "og:title", content: "Transcript Intake — Collective Impact" }, { property: "og:description", content: "Import and process housing funding transcripts." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <PlaceholderPage title="Transcript Intake" description="Import source transcripts and monitor processing status." icon={FileClock} /> });

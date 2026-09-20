@@ -1,0 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { Bot } from "lucide-react";
+import { PlaceholderPage } from "@/components/placeholder-page";
+export const Route = createFileRoute("/assistant-map")({ head: () => ({ meta: [{ title: "Assistant & Map — Collective Impact" }, { name: "description", content: "Connection status for the external assistant and map." }, { property: "og:title", content: "Assistant & Map — Collective Impact" }, { property: "og:description", content: "Connection status for the external assistant and map." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <PlaceholderPage title="Assistant & Map" description="The map-based assistant is managed outside this console." icon={Bot} /> });

@@ -1,0 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { MessageSquareText } from "lucide-react";
+import { PlaceholderPage } from "@/components/placeholder-page";
+export const Route = createFileRoute("/answer-log")({ head: () => ({ meta: [{ title: "Answer Log — Collective Impact" }, { name: "description", content: "Audit assistant answers and cited sources." }, { property: "og:title", content: "Answer Log — Collective Impact" }, { property: "og:description", content: "Audit assistant answers and cited sources." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <PlaceholderPage title="Answer Log" description="Audit assistant responses, citations, and operator feedback." icon={MessageSquareText} /> });

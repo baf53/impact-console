@@ -10,33 +10,115 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnswerLogRouteImport } from './routes/answer-log'
+import { Route as AssistantMapRouteImport } from './routes/assistant-map'
+import { Route as KnowledgeBaseRouteImport } from './routes/knowledge-base'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ReviewRouteImport } from './routes/review'
+import { Route as TranscriptIntakeRouteImport } from './routes/transcript-intake'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnswerLogRoute = AnswerLogRouteImport.update({
+  id: '/answer-log',
+  path: '/answer-log',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistantMapRoute = AssistantMapRouteImport.update({
+  id: '/assistant-map',
+  path: '/assistant-map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KnowledgeBaseRoute = KnowledgeBaseRouteImport.update({
+  id: '/knowledge-base',
+  path: '/knowledge-base',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TranscriptIntakeRoute = TranscriptIntakeRouteImport.update({
+  id: '/transcript-intake',
+  path: '/transcript-intake',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/answer-log': typeof AnswerLogRoute
+  '/assistant-map': typeof AssistantMapRoute
+  '/knowledge-base': typeof KnowledgeBaseRoute
+  '/reports': typeof ReportsRoute
+  '/review': typeof ReviewRoute
+  '/transcript-intake': typeof TranscriptIntakeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/answer-log': typeof AnswerLogRoute
+  '/assistant-map': typeof AssistantMapRoute
+  '/knowledge-base': typeof KnowledgeBaseRoute
+  '/reports': typeof ReportsRoute
+  '/review': typeof ReviewRoute
+  '/transcript-intake': typeof TranscriptIntakeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/answer-log': typeof AnswerLogRoute
+  '/assistant-map': typeof AssistantMapRoute
+  '/knowledge-base': typeof KnowledgeBaseRoute
+  '/reports': typeof ReportsRoute
+  '/review': typeof ReviewRoute
+  '/transcript-intake': typeof TranscriptIntakeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/answer-log'
+    | '/assistant-map'
+    | '/knowledge-base'
+    | '/reports'
+    | '/review'
+    | '/transcript-intake'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/answer-log'
+    | '/assistant-map'
+    | '/knowledge-base'
+    | '/reports'
+    | '/review'
+    | '/transcript-intake'
+  id:
+    | '__root__'
+    | '/'
+    | '/answer-log'
+    | '/assistant-map'
+    | '/knowledge-base'
+    | '/reports'
+    | '/review'
+    | '/transcript-intake'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnswerLogRoute: typeof AnswerLogRoute
+  AssistantMapRoute: typeof AssistantMapRoute
+  KnowledgeBaseRoute: typeof KnowledgeBaseRoute
+  ReportsRoute: typeof ReportsRoute
+  ReviewRoute: typeof ReviewRoute
+  TranscriptIntakeRoute: typeof TranscriptIntakeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +130,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/answer-log': {
+      id: '/answer-log'
+      path: '/answer-log'
+      fullPath: '/answer-log'
+      preLoaderRoute: typeof AnswerLogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistant-map': {
+      id: '/assistant-map'
+      path: '/assistant-map'
+      fullPath: '/assistant-map'
+      preLoaderRoute: typeof AssistantMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/knowledge-base': {
+      id: '/knowledge-base'
+      path: '/knowledge-base'
+      fullPath: '/knowledge-base'
+      preLoaderRoute: typeof KnowledgeBaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transcript-intake': {
+      id: '/transcript-intake'
+      path: '/transcript-intake'
+      fullPath: '/transcript-intake'
+      preLoaderRoute: typeof TranscriptIntakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnswerLogRoute: AnswerLogRoute,
+  AssistantMapRoute: AssistantMapRoute,
+  KnowledgeBaseRoute: KnowledgeBaseRoute,
+  ReportsRoute: ReportsRoute,
+  ReviewRoute: ReviewRoute,
+  TranscriptIntakeRoute: TranscriptIntakeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
