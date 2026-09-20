@@ -19,9 +19,23 @@ export type Activity = {
   status: "approved" | "review" | "generated" | "updated";
 };
 
+export type TranscriptStatus = "new" | "extracting" | "ready" | "approved";
+
+export type Transcript = {
+  id: string;
+  organization: string;
+  callDate: string;
+  projectId: string;
+  projectLabel: string;
+  programs: string[];
+  status: TranscriptStatus;
+  rawText: string;
+};
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
+  transcripts: Transcript[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
