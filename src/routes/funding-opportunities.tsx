@@ -1,17 +1,39 @@
 import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Building2, CircleCheck, Info, Landmark, Leaf, Plus, X } from "lucide-react";
+import {
+  Building2,
+  CircleCheck,
+  ExternalLink,
+  Info,
+  Landmark,
+  Leaf,
+  Plus,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
   consoleStore,
   useConsoleData,
   type FundingOpportunity,
+  type ManualOpportunity,
+  type ManualSourceType,
   type OpportunityStatus,
 } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/funding-opportunities")({
