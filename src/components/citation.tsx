@@ -62,3 +62,36 @@ export function CitationMarker({
     </HoverCard>
   );
 }
+
+export function CitationText({
+  text,
+  citations,
+  className,
+}: {
+  text: string;
+  citations?: Citation[];
+  className?: string;
+}) {
+  const lookup = new Map((citations ?? []).map((c) => [c.number, c]));
+  const parts = text.split(/(\[\d+\])/g);
+
+  return (
+    <p className={className}>
+      {parts.map((part, i) => {
+        const match = part.match(/^\[(\d+)\]$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          const citation = lookup.get(num);
+          if (citation) {
+            return (
+              <Fragment key={`${i}-${num}`}>
+                <CitationMarker citation={citation} className="mx-0.5 align-super" />
+              </Fragment>
+            );
+          }
+        }
+        return <Fragment key={i}>{part}</Fragment>;
+      })}
+    </p>
+  );
+}
