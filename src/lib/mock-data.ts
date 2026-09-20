@@ -312,6 +312,95 @@ export const seedDocuments: LibraryDocument[] = [
   },
 ];
 
+export type OpportunityStatus = "new" | "reviewed" | "added" | "dismissed";
+
+export type FundingOpportunity = {
+  id: string;
+  title: string;
+  agency: "HUD" | "USDA" | "EPA";
+  assistanceListing: string;
+  postedDate: string;
+  closeDate: string;
+  awardCeiling: string;
+  status: OpportunityStatus;
+  summary: string;
+};
+
+export const seedOpportunities: FundingOpportunity[] = [
+  {
+    id: "opp-1",
+    title: "FY2026 Continuum of Care Competition (CoC NOFO)",
+    agency: "HUD",
+    assistanceListing: "14.267",
+    postedDate: "Sep 9, 2026",
+    closeDate: "Nov 6, 2026",
+    awardCeiling: "$3.5B nationally",
+    status: "new",
+    summary:
+      "Funds permanent supportive housing, rapid re-housing, and supportive services through local CoCs. New construction of PSH units is an eligible component in most CoC geographies.",
+  },
+  {
+    id: "opp-2",
+    title: "Section 108 Loan Guarantee — Community Economic Development",
+    agency: "HUD",
+    assistanceListing: "14.248",
+    postedDate: "Aug 28, 2026",
+    closeDate: "Rolling",
+    awardCeiling: "5× annual CDBG allocation",
+    status: "new",
+    summary:
+      "Loan guarantees that let CDBG entitlement communities leverage their annual grant for large-scale economic development and housing projects. Applications accepted continuously.",
+  },
+  {
+    id: "opp-3",
+    title: "Preservation and Reinvestment Initiative for Community Enhancement (PRICE)",
+    agency: "HUD",
+    assistanceListing: "14.024",
+    postedDate: "Sep 4, 2026",
+    closeDate: "Dec 1, 2026",
+    awardCeiling: "$225M nationally",
+    status: "reviewed",
+    summary:
+      "Competitive grants to preserve and revitalize manufactured housing and manufactured home communities — infrastructure repairs, resident services, and long-term affordability.",
+  },
+  {
+    id: "opp-4",
+    title: "Multifamily Housing Direct Loans (Section 515 Rural Rental Housing)",
+    agency: "USDA",
+    assistanceListing: "10.415",
+    postedDate: "Sep 1, 2026",
+    closeDate: "Oct 30, 2026",
+    awardCeiling: "$1.5M per project",
+    status: "new",
+    summary:
+      "Direct loans at subsidized rates for new construction or rehabilitation of affordable rural rental housing. Bartlesville-area rural projects in surrounding counties may qualify.",
+  },
+  {
+    id: "opp-5",
+    title: "Brownfields Multipurpose, Assessment, RLF, and Cleanup (MARC) Grants",
+    agency: "EPA",
+    assistanceListing: "66.818",
+    postedDate: "Sep 12, 2026",
+    closeDate: "Nov 20, 2026",
+    awardCeiling: "$1M per assessment grant",
+    status: "new",
+    summary:
+      "Funds assessment and cleanup of contaminated sites ahead of redevelopment. Relevant where a housing site carries prior industrial use; cleanup grants pair with CDBG/HOME dollars.",
+  },
+  {
+    id: "opp-6",
+    title: "HOME Investment Partnerships — CHDO Set-Aside Technical Assistance",
+    agency: "HUD",
+    assistanceListing: "14.239",
+    postedDate: "Aug 21, 2026",
+    closeDate: "Dismissed",
+    awardCeiling: "N/A",
+    status: "dismissed",
+    summary:
+      "Technical assistance solicitation rather than direct project funding — noted for awareness; not relevant to the current project pipeline.",
+  },
+];
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
@@ -322,6 +411,7 @@ export type ConsoleData = {
   goldenSet: GoldenEntry[];
   reports: Report[];
   documents: LibraryDocument[];
+  opportunities: FundingOpportunity[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
@@ -332,6 +422,7 @@ export type ConsoleData = {
 const initialData: ConsoleData = {
   reports: seedReports,
   documents: seedDocuments,
+  opportunities: seedOpportunities,
   projects: [
     {
       id: "bartlesville-morton",
