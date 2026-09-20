@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ChevronRight, FileText, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
+import { DocumentsLibrary } from "@/components/documents-library";
 import { useConsoleData, type JurisdictionLevel, type KnowledgeProgram } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/knowledge-base/")({
@@ -77,7 +78,7 @@ function ProgramRow({ program }: { program: KnowledgeProgram }) {
 
 function KnowledgeBase() {
   const data = useConsoleData();
-  const [tab, setTab] = useState<"program" | "jurisdiction">("program");
+  const [tab, setTab] = useState<"program" | "jurisdiction" | "documents">("program");
   const programs = data.programsLibrary;
 
   const byJurisdiction = programs.reduce<Record<string, KnowledgeProgram[]>>((acc, program) => {
@@ -108,6 +109,7 @@ function KnowledgeBase() {
           [
             ["program", "By Program"],
             ["jurisdiction", "By Jurisdiction"],
+            ["documents", "Documents"],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -140,6 +142,10 @@ function KnowledgeBase() {
               <ProgramRow key={program.id} program={program} />
             ))}
           </div>
+        </div>
+      ) : tab === "documents" ? (
+        <div className="mt-6">
+          <DocumentsLibrary />
         </div>
       ) : (
         <div className="mt-6 space-y-6">
