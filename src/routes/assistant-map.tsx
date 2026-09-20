@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Info, MapPin, MessageSquare, Save } from "lucide-react";
+import { Info, MessageSquare, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CitationText } from "@/components/citation";
 import { useConsoleData, type AssistantAnswer } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import geospatialMvpAsset from "@/assets/geospatial-mvp.png.asset.json";
 
 export const Route = createFileRoute("/assistant-map")({
   head: () => ({
