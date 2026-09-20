@@ -99,9 +99,21 @@ function updateAnswer(
   consoleStore.update((current) => ({
     ...current,
     answerLog: current.answerLog.map((a) =>
-      a.id === id ? { ...a, ...clean } : a,
+      a.id === id ? applyPatch(a, clean, patch) : a,
     ),
   }));
+}
+
+function applyPatch(
+  answer: AssistantAnswer,
+  clean: Partial<AssistantAnswer>,
+  patch: Record<string, unknown>,
+): AssistantAnswer {
+  const next = { ...answer, ...clean } as Record<string, unknown>;
+  for (const key of Object.keys(patch)) {
+    if (patch[key] === undefined) delete next[key];
+  }
+  return next as AssistantAnswer;
 }
 
 function AnswerLogPage() {
