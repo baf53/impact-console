@@ -391,6 +391,7 @@ function QuickAddForm({ onClose }: { onClose: () => void }) {
 function FundingOpportunitiesPage() {
   const data = useConsoleData();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const selected = useMemo(
     () => data.opportunities.find((o) => o.id === selectedId) ?? null,
     [data.opportunities, selectedId],
