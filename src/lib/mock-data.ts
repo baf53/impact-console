@@ -586,6 +586,8 @@ export type ConsoleData = {
   documents: LibraryDocument[];
   opportunities: FundingOpportunity[];
   manualOpportunities: ManualOpportunity[];
+  clientSites: ClientSite[];
+  alerts: ClientAlert[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
