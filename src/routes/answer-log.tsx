@@ -89,7 +89,10 @@ function answerText(answer: AssistantAnswer) {
   return answer.messages.find((m) => m.role === "assistant")?.text ?? "";
 }
 
-function updateAnswer(id: string, patch: Partial<AssistantAnswer>) {
+function updateAnswer(
+  id: string,
+  patch: { [K in keyof AssistantAnswer]?: AssistantAnswer[K] | undefined },
+) {
   consoleStore.update((current) => ({
     ...current,
     answerLog: current.answerLog.map((a) =>
