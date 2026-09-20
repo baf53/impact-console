@@ -93,10 +93,13 @@ function updateAnswer(
   id: string,
   patch: { [K in keyof AssistantAnswer]?: AssistantAnswer[K] | undefined },
 ) {
+  const clean = Object.fromEntries(
+    Object.entries(patch).filter(([, value]) => value !== undefined),
+  ) as Partial<AssistantAnswer>;
   consoleStore.update((current) => ({
     ...current,
     answerLog: current.answerLog.map((a) =>
-      a.id === id ? { ...a, ...patch } : a,
+      a.id === id ? { ...a, ...clean } : a,
     ),
   }));
 }
