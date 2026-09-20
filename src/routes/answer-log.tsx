@@ -446,7 +446,7 @@ function AnswerLogPage() {
                               <p className="mt-1 text-muted-foreground">
                                 {chunk.excerpt}
                               </p>
-                              <p className="mt-1.5 flex items-center gap-2 text-muted-foreground">
+                              <div className="mt-1.5 flex items-center gap-2 text-muted-foreground">
                                 <span>{chunk.page}</span>
                                 <Badge
                                   variant="outline"
@@ -459,7 +459,7 @@ function AnswerLogPage() {
                                 >
                                   {chunk.used ? "Used in answer" : "Ranked but not used"}
                                 </Badge>
-                              </p>
+                              </div>
                             </li>
                           ))}
                         </ul>
