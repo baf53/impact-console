@@ -1,0 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { CheckSquare2 } from "lucide-react";
+import { PlaceholderPage } from "@/components/placeholder-page";
+export const Route = createFileRoute("/review")({ head: () => ({ meta: [{ title: "Review & Approve — Collective Impact" }, { name: "description", content: "Review extracted housing funding information." }, { property: "og:title", content: "Review & Approve — Collective Impact" }, { property: "og:description", content: "Review extracted housing funding information." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <PlaceholderPage title="Review & Approve" description="Verify extracted facts before they enter the knowledge base." icon={CheckSquare2} /> });

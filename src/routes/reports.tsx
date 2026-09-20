@@ -1,0 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { BarChart3 } from "lucide-react";
+import { PlaceholderPage } from "@/components/placeholder-page";
+export const Route = createFileRoute("/reports")({ head: () => ({ meta: [{ title: "Reports — Collective Impact" }, { name: "description", content: "Generate and review housing funding reports." }, { property: "og:title", content: "Reports — Collective Impact" }, { property: "og:description", content: "Generate and review housing funding reports." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <PlaceholderPage title="Reports" description="Generate and review project and program reports." icon={BarChart3} /> });
