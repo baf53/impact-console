@@ -16,6 +16,8 @@ import { Route as KnowledgeBaseRouteImport } from './routes/knowledge-base'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as TranscriptIntakeRouteImport } from './routes/transcript-intake'
+import { Route as KnowledgeBaseIndexRouteImport } from './routes/knowledge-base.index'
+import { Route as KnowledgeBaseProgramIdRouteImport } from './routes/knowledge-base.$programId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,34 +54,49 @@ const TranscriptIntakeRoute = TranscriptIntakeRouteImport.update({
   path: '/transcript-intake',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KnowledgeBaseIndexRoute = KnowledgeBaseIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => KnowledgeBaseRoute,
+} as any)
+const KnowledgeBaseProgramIdRoute = KnowledgeBaseProgramIdRouteImport.update({
+  id: '/$programId',
+  path: '/$programId',
+  getParentRoute: () => KnowledgeBaseRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/answer-log': typeof AnswerLogRoute
   '/assistant-map': typeof AssistantMapRoute
-  '/knowledge-base': typeof KnowledgeBaseRoute
+  '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
+  '/knowledge-base/$programId': typeof KnowledgeBaseProgramIdRoute
+  '/knowledge-base/': typeof KnowledgeBaseIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/answer-log': typeof AnswerLogRoute
   '/assistant-map': typeof AssistantMapRoute
-  '/knowledge-base': typeof KnowledgeBaseRoute
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
+  '/knowledge-base/$programId': typeof KnowledgeBaseProgramIdRoute
+  '/knowledge-base': typeof KnowledgeBaseIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/answer-log': typeof AnswerLogRoute
   '/assistant-map': typeof AssistantMapRoute
-  '/knowledge-base': typeof KnowledgeBaseRoute
+  '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
+  '/knowledge-base/$programId': typeof KnowledgeBaseProgramIdRoute
+  '/knowledge-base/': typeof KnowledgeBaseIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,15 +108,18 @@ export interface FileRouteTypes {
     | '/reports'
     | '/review'
     | '/transcript-intake'
+    | '/knowledge-base/$programId'
+    | '/knowledge-base/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/answer-log'
     | '/assistant-map'
-    | '/knowledge-base'
     | '/reports'
     | '/review'
     | '/transcript-intake'
+    | '/knowledge-base/$programId'
+    | '/knowledge-base'
   id:
     | '__root__'
     | '/'
@@ -109,13 +129,15 @@ export interface FileRouteTypes {
     | '/reports'
     | '/review'
     | '/transcript-intake'
+    | '/knowledge-base/$programId'
+    | '/knowledge-base/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnswerLogRoute: typeof AnswerLogRoute
   AssistantMapRoute: typeof AssistantMapRoute
-  KnowledgeBaseRoute: typeof KnowledgeBaseRoute
+  KnowledgeBaseRoute: typeof KnowledgeBaseRouteWithChildren
   ReportsRoute: typeof ReportsRoute
   ReviewRoute: typeof ReviewRoute
   TranscriptIntakeRoute: typeof TranscriptIntakeRoute
@@ -172,14 +194,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TranscriptIntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/knowledge-base/': {
+      id: '/knowledge-base/'
+      path: '/'
+      fullPath: '/knowledge-base/'
+      preLoaderRoute: typeof KnowledgeBaseIndexRouteImport
+      parentRoute: typeof KnowledgeBaseRoute
+    }
+    '/knowledge-base/$programId': {
+      id: '/knowledge-base/$programId'
+      path: '/$programId'
+      fullPath: '/knowledge-base/$programId'
+      preLoaderRoute: typeof KnowledgeBaseProgramIdRouteImport
+      parentRoute: typeof KnowledgeBaseRoute
+    }
   }
 }
+
+interface KnowledgeBaseRouteChildren {
+  KnowledgeBaseProgramIdRoute: typeof KnowledgeBaseProgramIdRoute
+  KnowledgeBaseIndexRoute: typeof KnowledgeBaseIndexRoute
+}
+
+const KnowledgeBaseRouteChildren: KnowledgeBaseRouteChildren = {
+  KnowledgeBaseProgramIdRoute: KnowledgeBaseProgramIdRoute,
+  KnowledgeBaseIndexRoute: KnowledgeBaseIndexRoute,
+}
+
+const KnowledgeBaseRouteWithChildren = KnowledgeBaseRoute._addFileChildren(
+  KnowledgeBaseRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnswerLogRoute: AnswerLogRoute,
   AssistantMapRoute: AssistantMapRoute,
-  KnowledgeBaseRoute: KnowledgeBaseRoute,
+  KnowledgeBaseRoute: KnowledgeBaseRouteWithChildren,
   ReportsRoute: ReportsRoute,
   ReviewRoute: ReviewRoute,
   TranscriptIntakeRoute: TranscriptIntakeRoute,
