@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   BarChart3,
+  BellRing,
   Bot,
   CheckSquare2,
   Database,
@@ -43,6 +44,7 @@ const navItems = [
   { label: "Assistant & Map", to: "/assistant-map", icon: Bot },
   { label: "Answer Log", to: "/answer-log", icon: MessageSquareText },
   { label: "Reports", to: "/reports", icon: BarChart3 },
+  { label: "Client Sites", to: "/client-sites", icon: BellRing },
 ] as const;
 
 function ThemeToggle() {

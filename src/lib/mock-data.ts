@@ -447,6 +447,133 @@ export const seedManualOpportunities: ManualOpportunity[] = [
   },
 ];
 
+export type AlertStatus = "draft" | "approved" | "sent";
+
+export type AlertTrigger = "New program" | "New opportunity" | "Regulation change";
+
+export type ClientAlert = {
+  id: string;
+  siteId: string;
+  title: string;
+  trigger: AlertTrigger;
+  status: AlertStatus;
+  createdOn: string;
+  sentOn?: string;
+  draftEmail: string;
+};
+
+export type ClientSite = {
+  id: string;
+  clientName: string;
+  contactName: string;
+  parcelAddress: string;
+  jurisdiction: string;
+  email: string;
+  originalCallDate: string;
+  reportId: string;
+  alertsEnabled: boolean;
+};
+
+export const seedClientSites: ClientSite[] = [
+  {
+    id: "site-1",
+    clientName: "Bartlesville Community Housing Partners",
+    contactName: "Dana Whitfield",
+    parcelAddress: "316 S Morton Ave, Bartlesville, OK",
+    jurisdiction: "Bartlesville, OK",
+    email: "dana.whitfield@bvillehousing.org",
+    originalCallDate: "Sep 12, 2026",
+    reportId: "report-1",
+    alertsEnabled: true,
+  },
+  {
+    id: "site-2",
+    clientName: "Orlando Neighborhood Development Corp",
+    contactName: "Marisol Reyes",
+    parcelAddress: "1000 N Orange Ave, Orlando, FL",
+    jurisdiction: "Orlando, FL",
+    email: "mreyes@orlandondc.org",
+    originalCallDate: "Sep 8, 2026",
+    reportId: "report-2",
+    alertsEnabled: true,
+  },
+  {
+    id: "site-3",
+    clientName: "Gold Street Housing Collaborative",
+    contactName: "Andre Bosley",
+    parcelAddress: "572 Gold St, Baltimore, MD",
+    jurisdiction: "Baltimore, MD",
+    email: "abosley@goldstreetcollab.org",
+    originalCallDate: "Sep 3, 2026",
+    reportId: "report-3",
+    alertsEnabled: true,
+  },
+];
+
+export const seedAlerts: ClientAlert[] = [
+  {
+    id: "alert-1",
+    siteId: "site-1",
+    title: "New program loaded: Oklahoma Increased Housing Program 2027 round",
+    trigger: "New program",
+    status: "draft",
+    createdOn: "Sep 19, 2026",
+    draftEmail:
+      "Hi Dana,\n\nOHFA has opened the 2027 round of the Increased Housing Program, and it looks relevant to 316 S Morton Ave. The program offers a 0% construction loan up to $3M or 85% of total development cost for projects of 5–200 units, with construction required to start within nine months of closing.\n\nYour original action plan assumed the 2026 round; the 2027 round moves your realistic start window back by roughly one quarter and raises the per-project ceiling.\n\nHappy to walk through how this changes the stack.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-2",
+    siteId: "site-1",
+    title: "Regulation update: CDBG Small Cities deadline changed",
+    trigger: "Regulation change",
+    status: "draft",
+    createdOn: "Sep 18, 2026",
+    draftEmail:
+      "Hi Dana,\n\nOklahoma Commerce moved the CDBG Small Cities application deadline forward by six weeks. Because Bartlesville is a Small Cities community, the city applies on your behalf rather than the developer applying directly — so the city's internal review calendar now starts sooner than your plan assumed.\n\nRecommended next step: contact Larry Curtis, Community Development Director, at 918.338.4238 to confirm the city's intake schedule.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-3",
+    siteId: "site-2",
+    title: "New opportunity: HUD PRICE grants posted on Grants.gov",
+    trigger: "New opportunity",
+    status: "draft",
+    createdOn: "Sep 17, 2026",
+    draftEmail:
+      "Hi Marisol,\n\nHUD posted the Preservation and Reinvestment Initiative for Community Enhancement (PRICE) competition, closing December 1. It isn't a direct fit for 1000 N Orange Ave as currently scoped, but if any phase includes manufactured-housing preservation it becomes a strong layer alongside your CDBG and SHIP dollars.\n\nLet me know if you'd like it evaluated against the current site plan.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-4",
+    siteId: "site-3",
+    title: "New opportunity: Abell Foundation Affordable Homes Fund",
+    trigger: "New opportunity",
+    status: "draft",
+    createdOn: "Sep 16, 2026",
+    draftEmail:
+      "Hi Andre,\n\nThe Abell Foundation's Affordable Homes Fund provides program-related investments of $250,000–$1,000,000 at 1–3% interest for Baltimore City projects, with priority for developments that leverage City CDBG or HOME funds — which 572 Gold St already does.\n\nReviews are rolling and the committee meets quarterly, so a two-page concept letter now would land in the next cycle.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-5",
+    siteId: "site-1",
+    title: "Report delivered: 316 S Morton Ave funding action plan",
+    trigger: "New program",
+    status: "sent",
+    createdOn: "Sep 12, 2026",
+    sentOn: "Sep 12, 2026",
+    draftEmail:
+      "Hi Dana,\n\nYour one-page funding action plan for 316 S Morton Ave is attached, covering OHFA, CDBG Small Cities, LIHTC, and HOME.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-6",
+    siteId: "site-3",
+    title: "Program update: Maryland LIHTC QAP scoring revised",
+    trigger: "Regulation change",
+    status: "approved",
+    createdOn: "Sep 15, 2026",
+    draftEmail:
+      "Hi Andre,\n\nMaryland DHCD revised the QAP scoring criteria, adding points for sites within a City-designated Affordable Housing TIF district. 572 Gold St qualifies.\n\n— Collective Impact",
+  },
+];
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
@@ -459,6 +586,8 @@ export type ConsoleData = {
   documents: LibraryDocument[];
   opportunities: FundingOpportunity[];
   manualOpportunities: ManualOpportunity[];
+  clientSites: ClientSite[];
+  alerts: ClientAlert[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
@@ -471,6 +600,8 @@ const initialData: ConsoleData = {
   documents: seedDocuments,
   opportunities: seedOpportunities,
   manualOpportunities: seedManualOpportunities,
+  clientSites: seedClientSites,
+  alerts: seedAlerts,
   projects: [
     {
       id: "bartlesville-morton",
@@ -1011,7 +1142,7 @@ const initialData: ConsoleData = {
         },
         {
           role: "assistant",
-          text: "For 316 S Morton Ave in Bartlesville, the strongest fit is the Oklahoma Increased Housing Program (OHFA), which offers a 0% interest construction loan of up to $3 million or 85% of total development cost for rental projects of 5–200 units.[1] Because Bartlesville is a CDBG Small Cities community, site preparation and infrastructure can also be pursued through the Oklahoma Department of Commerce, but the City of Bartlesville must be the applicant of record—not the developer.[2][3] For a small two-duplex project, LIHTC layering is unlikely to pencil due to compliance cost, so keep the capital stack to OHFA plus CDBG Small Cities unless the unit count scales.[4]",
+          text: "For 316 S Morton Ave in Bartlesville, the strongest fit is the Oklahoma Increased Housing Program, which offers a 0% interest construction loan of up to $3 million or 85% of total development cost for rental projects of 5–200 units, with construction starting within nine months of closing.[1] Bartlesville is a non-entitlement community served through the state's Small Cities CDBG allocation rather than a direct HUD entitlement grant, so site preparation and infrastructure run through the Oklahoma Department of Commerce.[2] In practice that means the City of Bartlesville must be the applicant of record — the developer participates as a sub-recipient, not as the applicant.[3] For a small two-duplex project, LIHTC layering is unlikely to pencil due to compliance cost, so keep the capital stack to OHFA plus CDBG Small Cities unless the unit count scales.[4]",
           citations: [
             {
               id: "cite-1",
@@ -1020,7 +1151,7 @@ const initialData: ConsoleData = {
               issuingBody: "Oklahoma Housing Finance Agency",
               date: "2026",
               page: "pp. 4–11, §2.1 Eligible Applicants",
-              url: "https://www.ok.gov/ohfa",
+              url: "https://www.ohfa.org/developers/",
               isPractitionerKnowledge: false,
             },
             {
@@ -1029,8 +1160,8 @@ const initialData: ConsoleData = {
               documentTitle: "Oklahoma Small Cities CDBG Application Guide",
               issuingBody: "Oklahoma Department of Commerce",
               date: "2026",
-              page: "pp. 17–24, Eligible activities",
-              url: "https://www.okcommerce.gov",
+              page: "pp. 17–24, Eligible applicants and activities",
+              url: "https://www.okcommerce.gov/community-development-block-grant/",
               isPractitionerKnowledge: false,
             },
             {
@@ -1103,7 +1234,28 @@ const initialData: ConsoleData = {
         },
         {
           role: "assistant",
-          text: "No. In Oklahoma's Small Cities CDBG program the unit of general local government is the only eligible applicant, so the City of Bartlesville must sponsor and submit the application. The developer participates as a sub-recipient or project partner.[1][2]",
+          text: "No. In Oklahoma's Small Cities CDBG program the unit of general local government is the only eligible applicant, so the City of Bartlesville must sponsor and submit the application.[1] The developer participates as a sub-recipient or project partner.[2]",
+          citations: [
+            {
+              id: "cite-a2-1",
+              number: 1,
+              documentTitle: "Oklahoma Small Cities CDBG Application Guide",
+              issuingBody: "Oklahoma Department of Commerce",
+              date: "2026",
+              page: "p. 19, Eligible applicants",
+              url: "https://www.okcommerce.gov/community-development-block-grant/",
+              isPractitionerKnowledge: false,
+            },
+            {
+              id: "cite-a2-2",
+              number: 2,
+              documentTitle: "Practitioner note: Bartlesville CDBG sponsorship",
+              issuingBody: "Collective Impact practitioner guidance",
+              date: "Sep 19, 2026",
+              page: "Bartlesville Housing Trust call",
+              isPractitionerKnowledge: true,
+            },
+          ],
         },
       ],
       retrievedChunks: [
@@ -1209,6 +1361,18 @@ const initialData: ConsoleData = {
         {
           role: "assistant",
           text: "SHIP award limits are set locally by each participating jurisdiction's Local Housing Assistance Plan; Orlando's specific per-unit cap isn't stated in the sources I found.[1]",
+          citations: [
+            {
+              id: "cite-a5-1",
+              number: 1,
+              documentTitle: "State Housing Initiatives Partnership (SHIP) Program Overview",
+              issuingBody: "Florida Housing Finance Corporation",
+              date: "2026",
+              page: "p. 5, Award limits",
+              url: "https://www.floridahousing.org/programs/special-programs/ship---state-housing-initiatives-partnership-program",
+              isPractitionerKnowledge: false,
+            },
+          ],
         },
       ],
       retrievedChunks: [
@@ -1247,6 +1411,18 @@ const initialData: ConsoleData = {
         {
           role: "assistant",
           text: "Yes. The site falls within a low- and moderate-income area identified in the City of Orlando Consolidated Plan, which makes area-benefit CDBG activities eligible at this location.[1]",
+          citations: [
+            {
+              id: "cite-a6-1",
+              number: 1,
+              documentTitle: "Consolidated Plan 2025–2029",
+              issuingBody: "City of Orlando Housing and Community Development Department",
+              date: "2025",
+              page: "pp. 62–64, Target areas",
+              url: "https://www.orlando.gov/Our-Government/Departments-Offices/Housing-and-Community-Development",
+              isPractitionerKnowledge: false,
+            },
+          ],
         },
       ],
       retrievedChunks: [
@@ -1280,6 +1456,18 @@ const initialData: ConsoleData = {
         {
           role: "assistant",
           text: "Yes, Baltimore routinely layers HOME with the Affordable Housing Trust Fund on rental projects; both are administered by DHCD.[1]",
+          citations: [
+            {
+              id: "cite-a7-1",
+              number: 1,
+              documentTitle: "Annual Action Plan FY2026",
+              issuingBody: "Baltimore City Department of Housing and Community Development",
+              date: "2026",
+              page: "p. 44, Rental housing programs",
+              url: "https://dhcd.baltimorecity.gov/nd/consolidated-plan",
+              isPractitionerKnowledge: false,
+            },
+          ],
         },
       ],
       retrievedChunks: [

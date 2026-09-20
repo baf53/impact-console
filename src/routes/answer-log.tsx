@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CitationMarker, CitationText, stripCitations } from "@/components/citation";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/answer-log")({
@@ -89,6 +90,10 @@ function answerText(answer: AssistantAnswer) {
   return answer.messages.find((m) => m.role === "assistant")?.text ?? "";
 }
 
+function answerCitations(answer: AssistantAnswer) {
+  return answer.messages.find((m) => m.role === "assistant")?.citations ?? [];
+}
+
 function updateAnswer(
   id: string,
   patch: { [K in keyof AssistantAnswer]?: AssistantAnswer[K] | undefined },
@@ -142,7 +147,7 @@ function AnswerLogPage() {
           sourceAnswerId: answer.id,
           projectLabel: answer.projectLabel,
           question: answer.question,
-          expectedAnswer: answerText(answer),
+          expectedAnswer: stripCitations(answerText(answer)),
           citations:
             answer.retrievedChunks
               ?.filter((chunk) => chunk.used)
@@ -229,7 +234,7 @@ function AnswerLogPage() {
                         {!selected && (
                           <td className="max-w-md px-4 py-3 text-muted-foreground">
                             <span className="line-clamp-2">
-                              {answerText(answer)}
+                              {stripCitations(answerText(answer))}
                             </span>
                           </td>
                         )}
@@ -298,7 +303,27 @@ function AnswerLogPage() {
                   </CardHeader>
                   <CardContent className="space-y-5">
                     <div className="rounded-md border bg-muted/30 p-3 text-sm leading-relaxed">
-                      {answerText(selected)}
+                      <CitationText
+                        text={answerText(selected)}
+                        citations={answerCitations(selected)}
+                      />
+                      {answerCitations(selected).length > 0 && (
+                        <div className="mt-3 space-y-2 border-t pt-3">
+                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Sources cited
+                          </p>
+                          {answerCitations(selected).map((citation) => (
+                            <div key={citation.id} className="flex gap-2">
+                              <CitationMarker citation={citation} className="mt-0.5" />
+                              <p className="text-xs leading-relaxed text-muted-foreground">
+                                {citation.isPractitionerKnowledge
+                                  ? `Collective Impact practitioner guidance. ${citation.documentTitle}, ${citation.page}, ${citation.date}.`
+                                  : `${citation.documentTitle}. ${citation.issuingBody}, ${citation.date}, ${citation.page}.`}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -421,7 +446,7 @@ function AnswerLogPage() {
                               <p className="mt-1 text-muted-foreground">
                                 {chunk.excerpt}
                               </p>
-                              <p className="mt-1.5 flex items-center gap-2 text-muted-foreground">
+                              <div className="mt-1.5 flex items-center gap-2 text-muted-foreground">
                                 <span>{chunk.page}</span>
                                 <Badge
                                   variant="outline"
@@ -434,7 +459,7 @@ function AnswerLogPage() {
                                 >
                                   {chunk.used ? "Used in answer" : "Ranked but not used"}
                                 </Badge>
-                              </p>
+                              </div>
                             </li>
                           ))}
                         </ul>
