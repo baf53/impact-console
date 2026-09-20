@@ -1456,6 +1456,18 @@ const initialData: ConsoleData = {
         {
           role: "assistant",
           text: "Yes, Baltimore routinely layers HOME with the Affordable Housing Trust Fund on rental projects; both are administered by DHCD.[1]",
+          citations: [
+            {
+              id: "cite-a7-1",
+              number: 1,
+              documentTitle: "Annual Action Plan FY2026",
+              issuingBody: "Baltimore City Department of Housing and Community Development",
+              date: "2026",
+              page: "p. 44, Rental housing programs",
+              url: "https://dhcd.baltimorecity.gov/nd/consolidated-plan",
+              isPractitionerKnowledge: false,
+            },
+          ],
         },
       ],
       retrievedChunks: [
