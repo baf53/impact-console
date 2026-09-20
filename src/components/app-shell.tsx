@@ -6,6 +6,7 @@ import {
   Database,
   FileClock,
   FolderOpen,
+  Landmark,
   LayoutDashboard,
   MessageSquareText,
   Moon,
