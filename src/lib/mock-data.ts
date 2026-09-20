@@ -321,6 +321,7 @@ export type ConsoleData = {
   answerLog: AssistantAnswer[];
   goldenSet: GoldenEntry[];
   reports: Report[];
+  documents: LibraryDocument[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
