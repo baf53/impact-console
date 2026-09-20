@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnswerLogRouteImport } from './routes/answer-log'
 import { Route as AssistantMapRouteImport } from './routes/assistant-map'
 import { Route as ClientSitesRouteImport } from './routes/client-sites'
-import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as FundingOpportunitiesRouteImport } from './routes/funding-opportunities'
 import { Route as KnowledgeBaseRouteImport } from './routes/knowledge-base'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -40,11 +39,6 @@ const AssistantMapRoute = AssistantMapRouteImport.update({
 const ClientSitesRoute = ClientSitesRouteImport.update({
   id: '/client-sites',
   path: '/client-sites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DocumentsRoute = DocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FundingOpportunitiesRoute = FundingOpportunitiesRouteImport.update({
@@ -88,7 +82,6 @@ export interface FileRoutesByFullPath {
   '/answer-log': typeof AnswerLogRoute
   '/assistant-map': typeof AssistantMapRoute
   '/client-sites': typeof ClientSitesRoute
-  '/documents': typeof DocumentsRoute
   '/funding-opportunities': typeof FundingOpportunitiesRoute
   '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
   '/reports': typeof ReportsRoute
@@ -102,7 +95,6 @@ export interface FileRoutesByTo {
   '/answer-log': typeof AnswerLogRoute
   '/assistant-map': typeof AssistantMapRoute
   '/client-sites': typeof ClientSitesRoute
-  '/documents': typeof DocumentsRoute
   '/funding-opportunities': typeof FundingOpportunitiesRoute
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
@@ -116,7 +108,6 @@ export interface FileRoutesById {
   '/answer-log': typeof AnswerLogRoute
   '/assistant-map': typeof AssistantMapRoute
   '/client-sites': typeof ClientSitesRoute
-  '/documents': typeof DocumentsRoute
   '/funding-opportunities': typeof FundingOpportunitiesRoute
   '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
   '/reports': typeof ReportsRoute
@@ -132,7 +123,6 @@ export interface FileRouteTypes {
     | '/answer-log'
     | '/assistant-map'
     | '/client-sites'
-    | '/documents'
     | '/funding-opportunities'
     | '/knowledge-base'
     | '/reports'
@@ -146,7 +136,6 @@ export interface FileRouteTypes {
     | '/answer-log'
     | '/assistant-map'
     | '/client-sites'
-    | '/documents'
     | '/funding-opportunities'
     | '/reports'
     | '/review'
@@ -159,7 +148,6 @@ export interface FileRouteTypes {
     | '/answer-log'
     | '/assistant-map'
     | '/client-sites'
-    | '/documents'
     | '/funding-opportunities'
     | '/knowledge-base'
     | '/reports'
@@ -174,7 +162,6 @@ export interface RootRouteChildren {
   AnswerLogRoute: typeof AnswerLogRoute
   AssistantMapRoute: typeof AssistantMapRoute
   ClientSitesRoute: typeof ClientSitesRoute
-  DocumentsRoute: typeof DocumentsRoute
   FundingOpportunitiesRoute: typeof FundingOpportunitiesRoute
   KnowledgeBaseRoute: typeof KnowledgeBaseRouteWithChildren
   ReportsRoute: typeof ReportsRoute
@@ -210,13 +197,6 @@ declare module '@tanstack/react-router' {
       path: '/client-sites'
       fullPath: '/client-sites'
       preLoaderRoute: typeof ClientSitesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/documents': {
-      id: '/documents'
-      path: '/documents'
-      fullPath: '/documents'
-      preLoaderRoute: typeof DocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/funding-opportunities': {
@@ -290,7 +270,6 @@ const rootRouteChildren: RootRouteChildren = {
   AnswerLogRoute: AnswerLogRoute,
   AssistantMapRoute: AssistantMapRoute,
   ClientSitesRoute: ClientSitesRoute,
-  DocumentsRoute: DocumentsRoute,
   FundingOpportunitiesRoute: FundingOpportunitiesRoute,
   KnowledgeBaseRoute: KnowledgeBaseRouteWithChildren,
   ReportsRoute: ReportsRoute,

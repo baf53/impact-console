@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileText, Search, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,28 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-export const Route = createFileRoute("/documents")({
-  head: () => ({
-    meta: [
-      { title: "Documents — Collective Impact" },
-      {
-        name: "description",
-        content:
-          "Search, filter, download, and upload every source document in the funding corpus.",
-      },
-      { property: "og:title", content: "Documents — Collective Impact" },
-      {
-        property: "og:description",
-        content:
-          "Search, filter, download, and upload every source document in the funding corpus.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
-  component: DocumentsPage,
-});
 
 const ALL = "__all__";
 
@@ -197,7 +174,7 @@ function UploadForm({ onClose }: { onClose: () => void }) {
   );
 }
 
-function DocumentsPage() {
+export function DocumentsLibrary() {
   const data = useConsoleData();
   const [query, setQuery] = useState("");
   const [type, setType] = useState(ALL);
@@ -239,10 +216,10 @@ function DocumentsPage() {
     query.trim() !== "" || type !== ALL || program !== ALL || jurisdiction !== ALL;
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8">
+    <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
+          <h2 className="text-lg font-semibold tracking-tight">Documents</h2>
           <p className="text-sm text-muted-foreground">
             Every source document behind the corpus — searchable, filterable, downloadable.
           </p>
