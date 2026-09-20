@@ -79,7 +79,7 @@ export function CitationText({
     <p className={className}>
       {parts.map((part, i) => {
         const match = part.match(/^\[(\d+)\]$/);
-        if (match) {
+        if (match && match[1]) {
           const num = parseInt(match[1], 10);
           const citation = lookup.get(num);
           if (citation) {
