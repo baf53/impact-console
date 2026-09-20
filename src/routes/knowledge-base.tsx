@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Database } from "lucide-react";
-import { PlaceholderPage } from "@/components/placeholder-page";
-export const Route = createFileRoute("/knowledge-base")({ head: () => ({ meta: [{ title: "Knowledge Base — Collective Impact" }, { name: "description", content: "Manage approved housing funding knowledge." }, { property: "og:title", content: "Knowledge Base — Collective Impact" }, { property: "og:description", content: "Manage approved housing funding knowledge." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: () => <PlaceholderPage title="Knowledge Base" description="Browse approved projects, programs, and source material." icon={Database} /> });
+import { Outlet, createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/knowledge-base")({
+  component: () => <Outlet />,
+});
