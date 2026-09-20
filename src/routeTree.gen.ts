@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnswerLogRouteImport } from './routes/answer-log'
 import { Route as AssistantMapRouteImport } from './routes/assistant-map'
+import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as KnowledgeBaseRouteImport } from './routes/knowledge-base'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ReviewRouteImport } from './routes/review'
@@ -32,6 +33,11 @@ const AnswerLogRoute = AnswerLogRouteImport.update({
 const AssistantMapRoute = AssistantMapRouteImport.update({
   id: '/assistant-map',
   path: '/assistant-map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KnowledgeBaseRoute = KnowledgeBaseRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/answer-log': typeof AnswerLogRoute
   '/assistant-map': typeof AssistantMapRoute
+  '/documents': typeof DocumentsRoute
   '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/answer-log': typeof AnswerLogRoute
   '/assistant-map': typeof AssistantMapRoute
+  '/documents': typeof DocumentsRoute
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/answer-log': typeof AnswerLogRoute
   '/assistant-map': typeof AssistantMapRoute
+  '/documents': typeof DocumentsRoute
   '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
     | '/'
     | '/answer-log'
     | '/assistant-map'
+    | '/documents'
     | '/knowledge-base'
     | '/reports'
     | '/review'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/'
     | '/answer-log'
     | '/assistant-map'
+    | '/documents'
     | '/reports'
     | '/review'
     | '/transcript-intake'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/answer-log'
     | '/assistant-map'
+    | '/documents'
     | '/knowledge-base'
     | '/reports'
     | '/review'
@@ -137,6 +149,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnswerLogRoute: typeof AnswerLogRoute
   AssistantMapRoute: typeof AssistantMapRoute
+  DocumentsRoute: typeof DocumentsRoute
   KnowledgeBaseRoute: typeof KnowledgeBaseRouteWithChildren
   ReportsRoute: typeof ReportsRoute
   ReviewRoute: typeof ReviewRoute
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: '/assistant-map'
       fullPath: '/assistant-map'
       preLoaderRoute: typeof AssistantMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/knowledge-base': {
@@ -229,6 +249,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnswerLogRoute: AnswerLogRoute,
   AssistantMapRoute: AssistantMapRoute,
+  DocumentsRoute: DocumentsRoute,
   KnowledgeBaseRoute: KnowledgeBaseRouteWithChildren,
   ReportsRoute: ReportsRoute,
   ReviewRoute: ReviewRoute,
