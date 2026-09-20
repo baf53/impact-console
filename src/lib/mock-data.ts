@@ -1411,6 +1411,18 @@ const initialData: ConsoleData = {
         {
           role: "assistant",
           text: "Yes. The site falls within a low- and moderate-income area identified in the City of Orlando Consolidated Plan, which makes area-benefit CDBG activities eligible at this location.[1]",
+          citations: [
+            {
+              id: "cite-a6-1",
+              number: 1,
+              documentTitle: "Consolidated Plan 2025–2029",
+              issuingBody: "City of Orlando Housing and Community Development Department",
+              date: "2025",
+              page: "pp. 62–64, Target areas",
+              url: "https://www.orlando.gov/Our-Government/Departments-Offices/Housing-and-Community-Development",
+              isPractitionerKnowledge: false,
+            },
+          ],
         },
       ],
       retrievedChunks: [
