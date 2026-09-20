@@ -164,6 +164,7 @@ export type ConsoleData = {
   programsLibrary: KnowledgeProgram[];
   answerLog: AssistantAnswer[];
   goldenSet: GoldenEntry[];
+  reports: Report[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
