@@ -422,8 +422,119 @@ function FundingOpportunitiesPage() {
             </span>
             Connected
           </span>
+          <Button className="w-full sm:w-auto" onClick={() => setShowForm(true)}>
+            <Plus className="size-4" />
+            Add opportunity manually
+          </Button>
         </CardContent>
       </Card>
+
+      {showForm && <QuickAddForm onClose={() => setShowForm(false)} />}
+
+      <Card>
+        <CardHeader className="space-y-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Manually added opportunities</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {data.manualOpportunities.length} captured from social, LinkedIn, foundation sites,
+                and email
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => setShowForm(true)}>
+              <Plus className="size-4" />
+              Add opportunity manually
+            </Button>
+          </div>
+          <div className="mt-3 flex items-start gap-3 rounded-md border border-primary/25 bg-primary/5 px-3 py-2">
+            <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
+            <p className="text-xs text-foreground/80">
+              Hyperlocal and philanthropic funding lives in posts, emails, and foundation pages — no
+              feed publishes it, so no competitor can scrape it. Everything captured here stays
+              Pending review until you approve it.
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">Opportunity</th>
+                  <th className="px-4 py-3 font-medium">Source</th>
+                  <th className="px-4 py-3 font-medium">Geography</th>
+                  <th className="px-4 py-3 font-medium">Added</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.manualOpportunities.map((item) => (
+                  <tr key={item.id} className="border-b align-top last:border-0">
+                    <td className="max-w-[340px] px-4 py-3">
+                      <p className="font-medium leading-snug">{item.title}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {item.funder} · {item.programType}
+                      </p>
+                      {item.pastedDetails && (
+                        <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground/90">
+                          {item.pastedDetails}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant="outline" className="whitespace-nowrap">
+                        {item.sourceType}
+                      </Badge>
+                      {item.sourceUrl && (
+                        <a
+                          href={item.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1.5 flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                          <ExternalLink className="size-3" />
+                          Source
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{item.geography}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+                      {item.addedOn}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        variant="outline"
+                        className={cn("whitespace-nowrap", manualStatusStyles[item.status])}
+                      >
+                        {manualStatusLabels[item.status]}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        {item.status === "pending" && (
+                          <Button size="sm" onClick={() => sendManualToReview(item)}>
+                            Send to review
+                          </Button>
+                        )}
+                        {item.status === "added" && (
+                          <Button size="sm" variant="ghost" asChild>
+                            <Link to="/review">
+                              <CircleCheck className="size-3.5" />
+                              View in Review
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
 
       <div className={cn("gap-6", selected ? "grid xl:grid-cols-[1fr_380px]" : "block")}>
         <Card>
