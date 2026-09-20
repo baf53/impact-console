@@ -331,6 +331,7 @@ export type ConsoleData = {
 
 const initialData: ConsoleData = {
   reports: seedReports,
+  documents: seedDocuments,
   projects: [
     {
       id: "bartlesville-morton",
