@@ -1361,6 +1361,18 @@ const initialData: ConsoleData = {
         {
           role: "assistant",
           text: "SHIP award limits are set locally by each participating jurisdiction's Local Housing Assistance Plan; Orlando's specific per-unit cap isn't stated in the sources I found.[1]",
+          citations: [
+            {
+              id: "cite-a5-1",
+              number: 1,
+              documentTitle: "State Housing Initiatives Partnership (SHIP) Program Overview",
+              issuingBody: "Florida Housing Finance Corporation",
+              date: "2026",
+              page: "p. 5, Award limits",
+              url: "https://www.floridahousing.org/programs/special-programs/ship---state-housing-initiatives-partnership-program",
+              isPractitionerKnowledge: false,
+            },
+          ],
         },
       ],
       retrievedChunks: [
