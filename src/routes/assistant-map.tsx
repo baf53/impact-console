@@ -64,13 +64,16 @@ function AssistantMapPage() {
 
             <div className="relative z-10 w-full max-w-xl">
               <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm">
-                <div className="h-64 bg-gradient-to-br from-muted to-muted/60">
-                  <div className="flex h-full items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <MapPin className="mx-auto h-10 w-10" />
-                      <p className="mt-2 text-sm font-medium">Geospatial map — existing MVP plugs in here</p>
-                    </div>
-                  </div>
+                <div className="relative h-64 overflow-hidden bg-muted">
+                  <img
+                    src={geospatialMvpAsset.url}
+                    alt="Geospatial MVP map showing Bartlesville project pins"
+                    className="h-full w-full object-cover object-center"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <p className="absolute bottom-3 left-4 text-xs font-medium text-white/90 drop-shadow">
+                    Geospatial MVP — Bartlesville, OK
+                  </p>
                 </div>
 
                 <div className="p-4">
