@@ -5,6 +5,7 @@ import {
   CheckSquare2,
   Database,
   FileClock,
+  FolderOpen,
   LayoutDashboard,
   MessageSquareText,
   Moon,
