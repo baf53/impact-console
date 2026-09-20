@@ -470,6 +470,7 @@ const initialData: ConsoleData = {
   reports: seedReports,
   documents: seedDocuments,
   opportunities: seedOpportunities,
+  manualOpportunities: seedManualOpportunities,
   projects: [
     {
       id: "bartlesville-morton",
