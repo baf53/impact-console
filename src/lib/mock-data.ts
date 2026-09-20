@@ -401,6 +401,52 @@ export const seedOpportunities: FundingOpportunity[] = [
   },
 ];
 
+export type ManualSourceType = "Social" | "LinkedIn" | "Foundation site" | "Email" | "Other";
+
+export type ManualOpportunityStatus = "pending" | "added" | "dismissed";
+
+export type ManualOpportunity = {
+  id: string;
+  title: string;
+  funder: string;
+  sourceUrl: string;
+  geography: string;
+  programType: string;
+  sourceType: ManualSourceType;
+  pastedDetails: string;
+  status: ManualOpportunityStatus;
+  addedOn: string;
+};
+
+export const seedManualOpportunities: ManualOpportunity[] = [
+  {
+    id: "manual-1",
+    title: "Tulsa Community Foundation — Neighborhood Housing Catalyst Grant",
+    funder: "Tulsa Community Foundation",
+    sourceUrl: "https://www.linkedin.com/posts/tulsa-community-foundation-housing-catalyst",
+    geography: "Tulsa County and northeastern Oklahoma",
+    programType: "Predevelopment grant",
+    sourceType: "LinkedIn",
+    pastedDetails:
+      "Pasted from a LinkedIn post by the Foundation's VP of Community Investment:\n\n\"We're opening a second round of the Neighborhood Housing Catalyst Grant. Up to $150,000 per project for predevelopment costs — site control, environmental review, architectural schematics — on affordable rental or ownership housing in Tulsa County and surrounding northeastern Oklahoma communities. Nonprofit developers and municipalities are eligible; for-profit developers may apply with a nonprofit co-applicant. Letters of interest due October 24; full applications by invitation. No formal RFP posted — DM me or email housing@tulsacf.org.\"\n\nComments on the post note the Foundation has previously stacked these dollars ahead of OHFA applications.",
+    status: "pending",
+    addedOn: "Sep 18, 2026",
+  },
+  {
+    id: "manual-2",
+    title: "Abell Foundation — Baltimore Affordable Homes Fund",
+    funder: "The Abell Foundation",
+    sourceUrl: "https://abell.org/programs/community-development/affordable-homes-fund",
+    geography: "Baltimore City",
+    programType: "Gap financing / PRI",
+    sourceType: "Foundation site",
+    pastedDetails:
+      "Pasted from the Abell Foundation community development page:\n\n\"The Affordable Homes Fund provides program-related investments and grants to close financing gaps on affordable housing in Baltimore City neighborhoods experiencing disinvestment. Typical PRIs range from $250,000 to $1,000,000 at 1–3% interest with terms up to seven years; grants are smaller and generally support predevelopment. Priority is given to projects that leverage City CDBG or HOME funds and to developers with demonstrated neighborhood ties. Proposals are reviewed on a rolling basis by the program committee, which meets quarterly.\"\n\nNo application form is published; the page directs applicants to submit a two-page concept letter.",
+    status: "pending",
+    addedOn: "Sep 16, 2026",
+  },
+];
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
