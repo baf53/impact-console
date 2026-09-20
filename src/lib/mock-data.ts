@@ -224,6 +224,419 @@ const initialData: ConsoleData = {
         "Mostly a peer-learning call. Sarasota's SHIP allocation behaves differently from Orange County's — ours skews toward homeownership, theirs toward rental — so the Orlando project's use of SHIP for rental reserves isn't something we could replicate directly.\n\nOn HOME, we shared our experience with the competitive cycle. The applications that win tend to show committed match, a completed environmental review, and a services plan for the 30% AMI units. Orlando has two of the three; the environmental review is their critical path.\n\nAgreed to reconnect after the state's SHIP workshop in October. No funding overlap between our projects, so this stays an information-sharing relationship.",
     },
   ],
+  programsLibrary: [
+    {
+      "id": "ok-increased-housing",
+      "name": "Oklahoma Increased Housing Program",
+      "administrator": "Oklahoma Housing Finance Agency (OHFA)",
+      "level": "State",
+      "jurisdiction": "Oklahoma",
+      "cities": [
+        "Bartlesville",
+        "Tulsa",
+        "Enid",
+        "Ardmore"
+      ],
+      "coverage": 92,
+      "funds": "0% interest construction financing for new rental and for-sale housing in communities with documented unmet demand.",
+      "overview": "Provides a 0% interest construction loan of up to $3M or 85% of total development cost, whichever is less, for projects of 5 to 200 units. Construction must begin within 9 months of award. Administered statewide by OHFA; developers apply directly, with a letter of support from the host municipality.",
+      "documents": [
+        {
+          "id": "doc-1",
+          "title": "Increased Housing Program Guidelines, PY2026",
+          "kind": "Guidelines",
+          "citation": "pp. 4\u201311, \u00a72.1 Eligible Applicants",
+          "approvedOn": "Sep 12, 2026"
+        },
+        {
+          "id": "doc-2",
+          "title": "OHFA Notice of Funding Availability",
+          "kind": "NOFA",
+          "citation": "p. 2, Award ceilings and timelines",
+          "approvedOn": "Sep 12, 2026"
+        },
+        {
+          "id": "doc-3",
+          "title": "Oklahoma Administrative Code Title 330",
+          "kind": "Regulation",
+          "citation": "\u00a7330:36-3, Loan terms",
+          "approvedOn": "Aug 30, 2026"
+        }
+      ],
+      "notes": [
+        {
+          "id": "n-1",
+          "text": "The 9-month construction start clock runs from award letter date, not closing. Sponsors who wait on permits routinely burn three months of it.",
+          "sourceCall": "Bartlesville Housing Trust",
+          "callDate": "Sep 19, 2026",
+          "routing": "program-level"
+        },
+        {
+          "id": "n-2",
+          "text": "OHFA weighs a municipal letter of support heavily on smaller rural deals even though it is not scored explicitly.",
+          "sourceCall": "Tulsa NeighborWorks Alliance",
+          "callDate": "Sep 17, 2026",
+          "routing": "program-level"
+        },
+        {
+          "id": "n-3",
+          "text": "LIHTC layering rarely pencils below four units \u2014 compliance cost outweighs the equity raised.",
+          "sourceCall": "Bartlesville Housing Trust",
+          "callDate": "Sep 19, 2026",
+          "routing": "program-level"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "c-1",
+          "name": "Renee Patterson",
+          "title": "Program Manager, Multifamily",
+          "org": "Oklahoma Housing Finance Agency",
+          "phone": "405.419.8100",
+          "email": "rpatterson@ohfa.org"
+        },
+        {
+          "id": "c-2",
+          "name": "Larry Curtis",
+          "title": "Community Development Director",
+          "org": "City of Bartlesville",
+          "phone": "918.338.4238"
+        }
+      ],
+      "attachments": [
+        {
+          "id": "a-1",
+          "name": "IHP-Application-2026.pdf",
+          "type": "Application form",
+          "size": "1.2 MB"
+        },
+        {
+          "id": "a-2",
+          "name": "Site-Control-Checklist.docx",
+          "type": "Checklist",
+          "size": "48 KB"
+        }
+      ]
+    },
+    {
+      "id": "cdbg-small-cities",
+      "name": "CDBG Small Cities",
+      "administrator": "Oklahoma Department of Commerce",
+      "level": "Federal",
+      "jurisdiction": "Oklahoma (non-entitlement)",
+      "cities": [
+        "Bartlesville",
+        "Ponca City",
+        "Duncan",
+        "Guymon"
+      ],
+      "coverage": 88,
+      "funds": "Infrastructure, site preparation, and community facilities in non-entitlement communities.",
+      "overview": "HUD's Community Development Block Grant for non-entitlement areas, passed through the state. The municipality is the applicant of record; developers participate as subrecipients. Annual competitive cycle with national objective and environmental review requirements.",
+      "documents": [
+        {
+          "id": "doc-4",
+          "title": "24 CFR Part 570 Subpart I",
+          "kind": "Regulation",
+          "citation": "\u00a7570.483, National objectives",
+          "approvedOn": "Sep 10, 2026"
+        },
+        {
+          "id": "doc-5",
+          "title": "Oklahoma Small Cities CDBG Application Guide",
+          "kind": "Guidelines",
+          "citation": "pp. 17\u201324, Eligible activities",
+          "approvedOn": "Sep 10, 2026"
+        },
+        {
+          "id": "doc-6",
+          "title": "State of Oklahoma Consolidated Plan 2025\u20132029",
+          "kind": "Consolidated Plan",
+          "citation": "pp. 112\u2013118, Housing priorities",
+          "approvedOn": "Aug 28, 2026"
+        },
+        {
+          "id": "doc-7",
+          "title": "Annual Action Plan PY2026",
+          "kind": "Annual Action Plan",
+          "citation": "p. 33, Small Cities set-aside",
+          "approvedOn": "Aug 28, 2026"
+        }
+      ],
+      "notes": [
+        {
+          "id": "n-4",
+          "text": "Bartlesville is a CDBG Small Cities community, so the city applies, not the developer. Developers who apply directly get screened out.",
+          "sourceCall": "Bartlesville Housing Trust",
+          "callDate": "Sep 19, 2026",
+          "routing": "program-level"
+        },
+        {
+          "id": "n-5",
+          "text": "Start with the city's Community Development office at least one cycle ahead \u2014 the city has to budget staff time for administration.",
+          "sourceCall": "Bartlesville Housing Trust",
+          "callDate": "Sep 19, 2026",
+          "routing": "program-level"
+        },
+        {
+          "id": "n-6",
+          "text": "Davis-Bacon applies once construction dollars are involved; price prevailing wage into bids from the start.",
+          "sourceCall": "Tulsa NeighborWorks Alliance",
+          "callDate": "Sep 17, 2026",
+          "routing": "program-level"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "c-3",
+          "name": "Larry Curtis",
+          "title": "Community Development Director",
+          "org": "City of Bartlesville",
+          "phone": "918.338.4238"
+        },
+        {
+          "id": "c-4",
+          "name": "Marcus Bell",
+          "title": "CDBG Program Officer",
+          "org": "Oklahoma Department of Commerce",
+          "email": "marcus.bell@okcommerce.gov"
+        }
+      ],
+      "attachments": [
+        {
+          "id": "a-3",
+          "name": "Small-Cities-Application-PY2026.pdf",
+          "type": "Application form",
+          "size": "2.4 MB"
+        },
+        {
+          "id": "a-4",
+          "name": "Environmental-Review-Checklist.pdf",
+          "type": "Checklist",
+          "size": "310 KB"
+        }
+      ]
+    },
+    {
+      "id": "orlando-cdbg",
+      "name": "City of Orlando CDBG",
+      "administrator": "City of Orlando Housing & Community Development",
+      "level": "Local",
+      "jurisdiction": "Orlando, FL",
+      "cities": [
+        "Orlando"
+      ],
+      "coverage": 64,
+      "funds": "Acquisition, soft costs, and rehabilitation for affordable housing inside city limits.",
+      "overview": "Orlando's entitlement CDBG allocation. Anchors acquisition and predevelopment for affordable rental projects. Environmental review must be complete before any federal drawdown.",
+      "documents": [
+        {
+          "id": "doc-8",
+          "title": "City of Orlando Consolidated Plan 2023\u20132027",
+          "kind": "Consolidated Plan",
+          "citation": "pp. 78\u201384, Rental priorities",
+          "approvedOn": "Sep 08, 2026"
+        },
+        {
+          "id": "doc-9",
+          "title": "Orlando Annual Action Plan FY2026",
+          "kind": "Annual Action Plan",
+          "citation": "p. 21, CDBG allocation table",
+          "approvedOn": "Sep 08, 2026"
+        }
+      ],
+      "notes": [
+        {
+          "id": "n-7",
+          "text": "Environmental review scheduling is the practical critical path, not the application itself.",
+          "sourceCall": "Central Florida Community Land Trust",
+          "callDate": "Sep 18, 2026",
+          "routing": "program-level"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "c-5",
+          "name": "Alicia Reyes",
+          "title": "Housing Division Manager",
+          "org": "City of Orlando",
+          "phone": "407.246.2708"
+        }
+      ],
+      "attachments": [
+        {
+          "id": "a-5",
+          "name": "Orlando-CDBG-Application.pdf",
+          "type": "Application form",
+          "size": "980 KB"
+        }
+      ]
+    },
+    {
+      "id": "florida-ship",
+      "name": "SHIP (State Housing Initiatives Partnership)",
+      "administrator": "Florida Housing Finance Corporation",
+      "level": "State",
+      "jurisdiction": "Florida",
+      "cities": [
+        "Orlando",
+        "Sarasota"
+      ],
+      "coverage": 58,
+      "funds": "Locally administered gap financing, rental reserves, and homeownership assistance.",
+      "overview": "State funds distributed to counties and eligible cities by formula, with each jurisdiction adopting its own Local Housing Assistance Plan. Uses vary widely by county \u2014 Orange County leans rental, Sarasota leans homeownership.",
+      "documents": [
+        {
+          "id": "doc-10",
+          "title": "Florida Statutes Chapter 420 Part VII",
+          "kind": "Regulation",
+          "citation": "\u00a7420.9075, Local housing assistance plans",
+          "approvedOn": "Sep 05, 2026"
+        },
+        {
+          "id": "doc-11",
+          "title": "Orange County Local Housing Assistance Plan",
+          "kind": "Guidelines",
+          "citation": "pp. 12\u201319, Rental strategies",
+          "approvedOn": "Sep 05, 2026"
+        }
+      ],
+      "notes": [
+        {
+          "id": "n-8",
+          "text": "SHIP strategy menus differ county to county \u2014 never assume one county's rental reserve strategy exists next door.",
+          "sourceCall": "Sarasota Gulf Coast Housing Corp",
+          "callDate": "Sep 12, 2026",
+          "routing": "program-level"
+        }
+      ],
+      "contacts": [],
+      "attachments": []
+    },
+    {
+      "id": "baltimore-cdbg-home",
+      "name": "Baltimore CDBG / HOME",
+      "administrator": "Baltimore City Department of Housing & Community Development",
+      "level": "Local",
+      "jurisdiction": "Baltimore, MD",
+      "cities": [
+        "Baltimore"
+      ],
+      "coverage": 71,
+      "funds": "Entitlement CDBG and HOME dollars for rehabilitation and affordable rental production.",
+      "overview": "Baltimore's combined entitlement allocation. HOME commitments are typically conditional until the state LIHTC award is announced.",
+      "documents": [
+        {
+          "id": "doc-12",
+          "title": "Baltimore Consolidated Plan 2024\u20132028",
+          "kind": "Consolidated Plan",
+          "citation": "pp. 94\u2013101, Rehabilitation priorities",
+          "approvedOn": "Sep 02, 2026"
+        },
+        {
+          "id": "doc-13",
+          "title": "24 CFR Part 92 (HOME)",
+          "kind": "Regulation",
+          "citation": "\u00a792.205, Eligible activities",
+          "approvedOn": "Aug 22, 2026"
+        }
+      ],
+      "notes": [
+        {
+          "id": "n-9",
+          "text": "HOME commitment letters here are conditional on the Maryland LIHTC award; sequence the applications accordingly.",
+          "sourceCall": "East Baltimore Development Inc.",
+          "callDate": "Sep 18, 2026",
+          "routing": "program-level"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "c-6",
+          "name": "Denise Holloway",
+          "title": "Deputy Commissioner",
+          "org": "Baltimore City DHCD",
+          "email": "denise.holloway@baltimorecity.gov"
+        }
+      ],
+      "attachments": []
+    },
+    {
+      "id": "maryland-lihtc",
+      "name": "Maryland LIHTC",
+      "administrator": "Maryland Department of Housing & Community Development",
+      "level": "State",
+      "jurisdiction": "Maryland",
+      "cities": [
+        "Baltimore"
+      ],
+      "coverage": 46,
+      "funds": "9% and 4% low-income housing tax credit allocations for rental production and rehabilitation.",
+      "overview": "Competitive 9% round plus non-competitive 4% credits paired with bonds. The application deadline governs the sequencing of every other source in a Maryland capital stack.",
+      "documents": [
+        {
+          "id": "doc-14",
+          "title": "Maryland Qualified Allocation Plan 2026",
+          "kind": "Guidelines",
+          "citation": "pp. 30\u201344, Scoring criteria",
+          "approvedOn": "Aug 19, 2026"
+        }
+      ],
+      "notes": [],
+      "contacts": [],
+      "attachments": []
+    },
+    {
+      "id": "md-trust-fund",
+      "name": "Maryland Affordable Housing Trust Fund",
+      "administrator": "Maryland DHCD / Affordable Housing Trust",
+      "level": "Quasi",
+      "jurisdiction": "Maryland",
+      "cities": [
+        "Baltimore"
+      ],
+      "coverage": 18,
+      "funds": "Soft second financing and gap funding for deeply affordable units.",
+      "overview": "Frequently used as a soft second behind LIHTC equity on vintage rehab deals. Program terms in the corpus are incomplete \u2014 current award ceilings, application windows, and underwriting standards have not been confirmed against a source document.",
+      "documents": [],
+      "notes": [],
+      "contacts": [],
+      "attachments": []
+    },
+    {
+      "id": "baltimore-tif",
+      "name": "City-Wide Affordable Housing TIF",
+      "administrator": "Baltimore Development Corporation",
+      "level": "Quasi",
+      "jurisdiction": "Baltimore, MD",
+      "cities": [
+        "Baltimore"
+      ],
+      "coverage": 34,
+      "funds": "Tax increment rebates supporting affordable housing production.",
+      "overview": "Rebates a share of the incremental property tax to qualifying affordable projects. Council approval makes timing unpredictable, so it is modeled as upside rather than a base source.",
+      "documents": [
+        {
+          "id": "doc-15",
+          "title": "Baltimore City Council Ordinance 22-140",
+          "kind": "Regulation",
+          "citation": "\u00a74, Eligible affordability thresholds",
+          "approvedOn": "Aug 14, 2026"
+        }
+      ],
+      "notes": [
+        {
+          "id": "n-10",
+          "text": "Model the increment conservatively \u2014 roughly 60% of the increment over fifteen years is the realistic planning assumption.",
+          "sourceCall": "Prince George's Housing Initiative",
+          "callDate": "Sep 15, 2026",
+          "routing": "program-level"
+        }
+      ],
+      "contacts": [],
+      "attachments": []
+    }
+  ],
   extractions: [
     {
       id: "ex-1",
