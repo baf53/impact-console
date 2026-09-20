@@ -1234,7 +1234,28 @@ const initialData: ConsoleData = {
         },
         {
           role: "assistant",
-          text: "No. In Oklahoma's Small Cities CDBG program the unit of general local government is the only eligible applicant, so the City of Bartlesville must sponsor and submit the application. The developer participates as a sub-recipient or project partner.[1][2]",
+          text: "No. In Oklahoma's Small Cities CDBG program the unit of general local government is the only eligible applicant, so the City of Bartlesville must sponsor and submit the application.[1] The developer participates as a sub-recipient or project partner.[2]",
+          citations: [
+            {
+              id: "cite-a2-1",
+              number: 1,
+              documentTitle: "Oklahoma Small Cities CDBG Application Guide",
+              issuingBody: "Oklahoma Department of Commerce",
+              date: "2026",
+              page: "p. 19, Eligible applicants",
+              url: "https://www.okcommerce.gov/community-development-block-grant/",
+              isPractitionerKnowledge: false,
+            },
+            {
+              id: "cite-a2-2",
+              number: 2,
+              documentTitle: "Practitioner note: Bartlesville CDBG sponsorship",
+              issuingBody: "Collective Impact practitioner guidance",
+              date: "Sep 19, 2026",
+              page: "Bartlesville Housing Trust call",
+              isPractitionerKnowledge: true,
+            },
+          ],
         },
       ],
       retrievedChunks: [
