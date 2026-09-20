@@ -74,11 +74,6 @@ const groups: { category: ExtractionCategory; title: string; blurb: string; icon
   },
 ];
 
-const routingLabels: Record<RoutingLevel, string> = {
-  "program-level": "Program-level",
-  "site-level": "Site-level",
-};
-
 const routingHints: Record<RoutingLevel, string> = {
   "program-level": "Applies to every future project in this jurisdiction",
   "site-level": "Applies to this parcel only",
@@ -195,7 +190,7 @@ function ItemCard({ item }: { item: ExtractionItem }) {
             value={item.routing}
             onValueChange={(value) => updateItem(item.id, { routing: value as RoutingLevel })}
           >
-            <SelectTrigger size="sm" className="w-[150px]" aria-label={`Routing for ${item.title}`}>
+            <SelectTrigger className="h-8 w-[150px] text-xs" aria-label={`Routing for ${item.title}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -412,6 +407,3 @@ function ReviewApprove() {
     </main>
   );
 }
-
-const routingLabelsUsed = routingLabels;
-void routingLabelsUsed;
