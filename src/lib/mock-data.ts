@@ -447,6 +447,133 @@ export const seedManualOpportunities: ManualOpportunity[] = [
   },
 ];
 
+export type AlertStatus = "draft" | "approved" | "sent";
+
+export type AlertTrigger = "New program" | "New opportunity" | "Regulation change";
+
+export type ClientAlert = {
+  id: string;
+  siteId: string;
+  title: string;
+  trigger: AlertTrigger;
+  status: AlertStatus;
+  createdOn: string;
+  sentOn?: string;
+  draftEmail: string;
+};
+
+export type ClientSite = {
+  id: string;
+  clientName: string;
+  contactName: string;
+  parcelAddress: string;
+  jurisdiction: string;
+  email: string;
+  originalCallDate: string;
+  reportId: string;
+  alertsEnabled: boolean;
+};
+
+export const seedClientSites: ClientSite[] = [
+  {
+    id: "site-1",
+    clientName: "Bartlesville Community Housing Partners",
+    contactName: "Dana Whitfield",
+    parcelAddress: "316 S Morton Ave, Bartlesville, OK",
+    jurisdiction: "Bartlesville, OK",
+    email: "dana.whitfield@bvillehousing.org",
+    originalCallDate: "Sep 12, 2026",
+    reportId: "report-1",
+    alertsEnabled: true,
+  },
+  {
+    id: "site-2",
+    clientName: "Orlando Neighborhood Development Corp",
+    contactName: "Marisol Reyes",
+    parcelAddress: "1000 N Orange Ave, Orlando, FL",
+    jurisdiction: "Orlando, FL",
+    email: "mreyes@orlandondc.org",
+    originalCallDate: "Sep 8, 2026",
+    reportId: "report-2",
+    alertsEnabled: true,
+  },
+  {
+    id: "site-3",
+    clientName: "Gold Street Housing Collaborative",
+    contactName: "Andre Bosley",
+    parcelAddress: "572 Gold St, Baltimore, MD",
+    jurisdiction: "Baltimore, MD",
+    email: "abosley@goldstreetcollab.org",
+    originalCallDate: "Sep 3, 2026",
+    reportId: "report-3",
+    alertsEnabled: true,
+  },
+];
+
+export const seedAlerts: ClientAlert[] = [
+  {
+    id: "alert-1",
+    siteId: "site-1",
+    title: "New program loaded: Oklahoma Increased Housing Program 2027 round",
+    trigger: "New program",
+    status: "draft",
+    createdOn: "Sep 19, 2026",
+    draftEmail:
+      "Hi Dana,\n\nOHFA has opened the 2027 round of the Increased Housing Program, and it looks relevant to 316 S Morton Ave. The program offers a 0% construction loan up to $3M or 85% of total development cost for projects of 5–200 units, with construction required to start within nine months of closing.\n\nYour original action plan assumed the 2026 round; the 2027 round moves your realistic start window back by roughly one quarter and raises the per-project ceiling.\n\nHappy to walk through how this changes the stack.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-2",
+    siteId: "site-1",
+    title: "Regulation update: CDBG Small Cities deadline changed",
+    trigger: "Regulation change",
+    status: "draft",
+    createdOn: "Sep 18, 2026",
+    draftEmail:
+      "Hi Dana,\n\nOklahoma Commerce moved the CDBG Small Cities application deadline forward by six weeks. Because Bartlesville is a Small Cities community, the city applies on your behalf rather than the developer applying directly — so the city's internal review calendar now starts sooner than your plan assumed.\n\nRecommended next step: contact Larry Curtis, Community Development Director, at 918.338.4238 to confirm the city's intake schedule.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-3",
+    siteId: "site-2",
+    title: "New opportunity: HUD PRICE grants posted on Grants.gov",
+    trigger: "New opportunity",
+    status: "draft",
+    createdOn: "Sep 17, 2026",
+    draftEmail:
+      "Hi Marisol,\n\nHUD posted the Preservation and Reinvestment Initiative for Community Enhancement (PRICE) competition, closing December 1. It isn't a direct fit for 1000 N Orange Ave as currently scoped, but if any phase includes manufactured-housing preservation it becomes a strong layer alongside your CDBG and SHIP dollars.\n\nLet me know if you'd like it evaluated against the current site plan.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-4",
+    siteId: "site-3",
+    title: "New opportunity: Abell Foundation Affordable Homes Fund",
+    trigger: "New opportunity",
+    status: "draft",
+    createdOn: "Sep 16, 2026",
+    draftEmail:
+      "Hi Andre,\n\nThe Abell Foundation's Affordable Homes Fund provides program-related investments of $250,000–$1,000,000 at 1–3% interest for Baltimore City projects, with priority for developments that leverage City CDBG or HOME funds — which 572 Gold St already does.\n\nReviews are rolling and the committee meets quarterly, so a two-page concept letter now would land in the next cycle.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-5",
+    siteId: "site-1",
+    title: "Report delivered: 316 S Morton Ave funding action plan",
+    trigger: "New program",
+    status: "sent",
+    createdOn: "Sep 12, 2026",
+    sentOn: "Sep 12, 2026",
+    draftEmail:
+      "Hi Dana,\n\nYour one-page funding action plan for 316 S Morton Ave is attached, covering OHFA, CDBG Small Cities, LIHTC, and HOME.\n\n— Collective Impact",
+  },
+  {
+    id: "alert-6",
+    siteId: "site-3",
+    title: "Program update: Maryland LIHTC QAP scoring revised",
+    trigger: "Regulation change",
+    status: "approved",
+    createdOn: "Sep 15, 2026",
+    draftEmail:
+      "Hi Andre,\n\nMaryland DHCD revised the QAP scoring criteria, adding points for sites within a City-designated Affordable Housing TIF district. 572 Gold St qualifies.\n\n— Collective Impact",
+  },
+];
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
