@@ -600,6 +600,8 @@ const initialData: ConsoleData = {
   documents: seedDocuments,
   opportunities: seedOpportunities,
   manualOpportunities: seedManualOpportunities,
+  clientSites: seedClientSites,
+  alerts: seedAlerts,
   projects: [
     {
       id: "bartlesville-morton",
