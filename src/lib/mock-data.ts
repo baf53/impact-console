@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { seedReports } from "@/lib/report-content";
 
 export type Project = {
   id: string;
@@ -156,6 +157,28 @@ export type GoldenEntry = {
   lastCheck: "passing" | "failing";
 };
 
+export type ReportProgram = {
+  id: string;
+  name: string;
+  fit: "Strong" | "Likely" | "Conditional";
+  summary: string;
+  actions: string[];
+};
+
+export type Report = {
+  id: string;
+  projectId: string;
+  projectLabel: string;
+  generatedOn: string;
+  programCount: number;
+  parcelSummary: string;
+  focus: string[];
+  programs: ReportProgram[];
+  stacking: string;
+  cashFlow: { label: string; value: string; note?: string }[];
+  citations: Citation[];
+};
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
@@ -164,6 +187,7 @@ export type ConsoleData = {
   programsLibrary: KnowledgeProgram[];
   answerLog: AssistantAnswer[];
   goldenSet: GoldenEntry[];
+  reports: Report[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
@@ -172,6 +196,7 @@ export type ConsoleData = {
 };
 
 const initialData: ConsoleData = {
+  reports: seedReports,
   projects: [
     {
       id: "bartlesville-morton",
