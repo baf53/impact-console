@@ -90,6 +90,10 @@ function answerText(answer: AssistantAnswer) {
   return answer.messages.find((m) => m.role === "assistant")?.text ?? "";
 }
 
+function answerCitations(answer: AssistantAnswer) {
+  return answer.messages.find((m) => m.role === "assistant")?.citations ?? [];
+}
+
 function updateAnswer(
   id: string,
   patch: { [K in keyof AssistantAnswer]?: AssistantAnswer[K] | undefined },
