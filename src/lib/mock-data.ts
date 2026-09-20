@@ -179,6 +179,139 @@ export type Report = {
   citations: Citation[];
 };
 
+export type LibraryDocumentType =
+  | "Regulation"
+  | "Agency guidance"
+  | "Consolidated Plan"
+  | "Annual Action Plan"
+  | "Application form"
+  | "Checklist";
+
+export type LibraryDocumentStatus = "Approved" | "Pending review";
+
+export type LibraryDocument = {
+  id: string;
+  title: string;
+  type: LibraryDocumentType;
+  program: string;
+  jurisdiction: string;
+  status: LibraryDocumentStatus;
+  addedOn: string;
+  fileName: string;
+};
+
+export const documentTypes: LibraryDocumentType[] = [
+  "Regulation",
+  "Agency guidance",
+  "Consolidated Plan",
+  "Annual Action Plan",
+  "Application form",
+  "Checklist",
+];
+
+export const seedDocuments: LibraryDocument[] = [
+  {
+    id: "doc-1",
+    title: "Oklahoma Increased Housing Program Guidelines (2025)",
+    type: "Agency guidance",
+    program: "Oklahoma Increased Housing Program",
+    jurisdiction: "Oklahoma",
+    status: "Approved",
+    addedOn: "Aug 12, 2026",
+    fileName: "ohfa-increased-housing-guidelines-2025.pdf",
+  },
+  {
+    id: "doc-2",
+    title: "Oklahoma Increased Housing Program Application",
+    type: "Application form",
+    program: "Oklahoma Increased Housing Program",
+    jurisdiction: "Oklahoma",
+    status: "Approved",
+    addedOn: "Aug 12, 2026",
+    fileName: "ohfa-increased-housing-application.pdf",
+  },
+  {
+    id: "doc-3",
+    title: "24 CFR Part 570 — Community Development Block Grants",
+    type: "Regulation",
+    program: "CDBG Small Cities",
+    jurisdiction: "Federal",
+    status: "Approved",
+    addedOn: "Jul 30, 2026",
+    fileName: "24-cfr-570.pdf",
+  },
+  {
+    id: "doc-4",
+    title: "CDBG Small Cities Pre-Application Checklist",
+    type: "Checklist",
+    program: "CDBG Small Cities",
+    jurisdiction: "Oklahoma",
+    status: "Approved",
+    addedOn: "Jul 30, 2026",
+    fileName: "cdbg-small-cities-checklist.pdf",
+  },
+  {
+    id: "doc-5",
+    title: "City of Bartlesville Annual Action Plan FY2026",
+    type: "Annual Action Plan",
+    program: "CDBG Small Cities",
+    jurisdiction: "Bartlesville, OK",
+    status: "Approved",
+    addedOn: "Jul 18, 2026",
+    fileName: "bartlesville-aap-fy2026.pdf",
+  },
+  {
+    id: "doc-6",
+    title: "City of Orlando Consolidated Plan 2024–2028",
+    type: "Consolidated Plan",
+    program: "Orlando CDBG",
+    jurisdiction: "Orlando, FL",
+    status: "Approved",
+    addedOn: "Jun 26, 2026",
+    fileName: "orlando-con-plan-2024-2028.pdf",
+  },
+  {
+    id: "doc-7",
+    title: "Florida SHIP Program Rule 67-37 F.A.C.",
+    type: "Regulation",
+    program: "Florida SHIP",
+    jurisdiction: "Florida",
+    status: "Approved",
+    addedOn: "Jun 26, 2026",
+    fileName: "florida-ship-rule-67-37.pdf",
+  },
+  {
+    id: "doc-8",
+    title: "Orlando HOME Developer Application Packet",
+    type: "Application form",
+    program: "Orlando HOME",
+    jurisdiction: "Orlando, FL",
+    status: "Pending review",
+    addedOn: "Sep 09, 2026",
+    fileName: "orlando-home-application-packet.pdf",
+  },
+  {
+    id: "doc-9",
+    title: "Baltimore City Consolidated Plan 2025–2029",
+    type: "Consolidated Plan",
+    program: "Baltimore CDBG / HOME",
+    jurisdiction: "Baltimore, MD",
+    status: "Approved",
+    addedOn: "May 14, 2026",
+    fileName: "baltimore-con-plan-2025-2029.pdf",
+  },
+  {
+    id: "doc-10",
+    title: "Maryland Affordable Housing Trust Fund Guidance Memo",
+    type: "Agency guidance",
+    program: "Maryland Affordable Housing Trust Fund",
+    jurisdiction: "Maryland",
+    status: "Pending review",
+    addedOn: "Sep 02, 2026",
+    fileName: "md-trust-fund-guidance-memo.pdf",
+  },
+];
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
