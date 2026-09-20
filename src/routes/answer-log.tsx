@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CitationMarker, CitationText, stripCitations } from "@/components/citation";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/answer-log")({
