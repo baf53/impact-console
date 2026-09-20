@@ -17,6 +17,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as TranscriptIntakeRouteImport } from './routes/transcript-intake'
 import { Route as KnowledgeBaseIndexRouteImport } from './routes/knowledge-base.index'
+import { Route as KnowledgeBaseProgramIdRouteImport } from './routes/knowledge-base.$programId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const KnowledgeBaseIndexRoute = KnowledgeBaseIndexRouteImport.update({
   path: '/',
   getParentRoute: () => KnowledgeBaseRoute,
 } as any)
+const KnowledgeBaseProgramIdRoute = KnowledgeBaseProgramIdRouteImport.update({
+  id: '/$programId',
+  path: '/$programId',
+  getParentRoute: () => KnowledgeBaseRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
+  '/knowledge-base/$programId': typeof KnowledgeBaseProgramIdRoute
   '/knowledge-base/': typeof KnowledgeBaseIndexRoute
 }
 export interface FileRoutesByTo {
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
+  '/knowledge-base/$programId': typeof KnowledgeBaseProgramIdRoute
   '/knowledge-base': typeof KnowledgeBaseIndexRoute
 }
 export interface FileRoutesById {
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
+  '/knowledge-base/$programId': typeof KnowledgeBaseProgramIdRoute
   '/knowledge-base/': typeof KnowledgeBaseIndexRoute
 }
 export interface FileRouteTypes {
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/review'
     | '/transcript-intake'
+    | '/knowledge-base/$programId'
     | '/knowledge-base/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/review'
     | '/transcript-intake'
+    | '/knowledge-base/$programId'
     | '/knowledge-base'
   id:
     | '__root__'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/review'
     | '/transcript-intake'
+    | '/knowledge-base/$programId'
     | '/knowledge-base/'
   fileRoutesById: FileRoutesById
 }
@@ -189,14 +201,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KnowledgeBaseIndexRouteImport
       parentRoute: typeof KnowledgeBaseRoute
     }
+    '/knowledge-base/$programId': {
+      id: '/knowledge-base/$programId'
+      path: '/$programId'
+      fullPath: '/knowledge-base/$programId'
+      preLoaderRoute: typeof KnowledgeBaseProgramIdRouteImport
+      parentRoute: typeof KnowledgeBaseRoute
+    }
   }
 }
 
 interface KnowledgeBaseRouteChildren {
+  KnowledgeBaseProgramIdRoute: typeof KnowledgeBaseProgramIdRoute
   KnowledgeBaseIndexRoute: typeof KnowledgeBaseIndexRoute
 }
 
 const KnowledgeBaseRouteChildren: KnowledgeBaseRouteChildren = {
+  KnowledgeBaseProgramIdRoute: KnowledgeBaseProgramIdRoute,
   KnowledgeBaseIndexRoute: KnowledgeBaseIndexRoute,
 }
 
