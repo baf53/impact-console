@@ -458,6 +458,7 @@ export type ConsoleData = {
   reports: Report[];
   documents: LibraryDocument[];
   opportunities: FundingOpportunity[];
+  manualOpportunities: ManualOpportunity[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
