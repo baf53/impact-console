@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Info, MapPin, MessageSquare, Save } from "lucide-react";
+import { Info, MessageSquare, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CitationText } from "@/components/citation";
 import { useConsoleData, type AssistantAnswer } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import geospatialMvpAsset from "@/assets/geospatial-mvp.png.asset.json";
 
 export const Route = createFileRoute("/assistant-map")({
   head: () => ({
@@ -49,49 +50,40 @@ function AssistantMapPage() {
             </Badge>
           </div>
 
-          <div className="relative flex flex-1 items-center justify-center bg-muted/40 p-6">
-            <div className="absolute inset-0 grid opacity-[0.08] dark:opacity-[0.05]">
-              <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)" />
-              </svg>
-            </div>
+          <div className="relative flex-1 overflow-hidden bg-muted">
+            <img
+              src={geospatialMvpAsset.url}
+              alt="Geospatial MVP map showing Bartlesville project pins"
+              className="h-full w-full object-cover object-center"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10" />
 
-            <div className="relative z-10 w-full max-w-xl">
-              <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm">
-                <div className="h-64 bg-gradient-to-br from-muted to-muted/60">
-                  <div className="flex h-full items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <MapPin className="mx-auto h-10 w-10" />
-                      <p className="mt-2 text-sm font-medium">Geospatial map — existing MVP plugs in here</p>
-                    </div>
+            <div className="absolute bottom-4 left-4 right-4 z-10 sm:bottom-6 sm:left-6 sm:right-auto sm:max-w-sm">
+              <div className="overflow-hidden rounded-lg border bg-card/95 p-4 shadow-lg backdrop-blur">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">316 S Morton Ave</p>
+                    <p className="text-sm text-muted-foreground">Bartlesville, OK 74003</p>
                   </div>
+                  <Badge variant="outline">Vacant lot</Badge>
                 </div>
-
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-semibold">316 S Morton Ave</p>
-                      <p className="text-sm text-muted-foreground">Bartlesville, OK 74003</p>
-                    </div>
-                    <Badge variant="outline">Vacant lot</Badge>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-md bg-muted px-3 py-2">
+                    <p className="text-xs text-muted-foreground">Use</p>
+                    <p className="font-medium">Rental housing</p>
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-md bg-muted/60 px-3 py-2">
-                      <p className="text-xs text-muted-foreground">Use</p>
-                      <p className="font-medium">Rental housing</p>
-                    </div>
-                    <div className="rounded-md bg-muted/60 px-3 py-2">
-                      <p className="text-xs text-muted-foreground">Programs loaded</p>
-                      <p className="font-medium">4</p>
-                    </div>
+                  <div className="rounded-md bg-muted px-3 py-2">
+                    <p className="text-xs text-muted-foreground">Programs loaded</p>
+                    <p className="font-medium">4</p>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="absolute left-4 top-4 z-10 hidden sm:block">
+              <p className="rounded-md bg-black/60 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur">
+                Geospatial MVP — Bartlesville, OK
+              </p>
             </div>
           </div>
         </section>
