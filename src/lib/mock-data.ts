@@ -115,6 +115,19 @@ export type AssistantMessage = {
   citations?: Citation[];
 };
 
+export type AnswerRating = "good" | "needs-work" | "wrong";
+
+export type FailureCause = "retrieval" | "prompt" | "not-loaded";
+
+export type RetrievedChunk = {
+  id: string;
+  documentTitle: string;
+  excerpt: string;
+  page: string;
+  score: number;
+  used: boolean;
+};
+
 export type AssistantAnswer = {
   id: string;
   projectId: string;
@@ -123,6 +136,24 @@ export type AssistantAnswer = {
   coverage: "full" | "partial" | "thin";
   messages: AssistantMessage[];
   loggedAt?: string;
+  askedOn?: string;
+  rating?: AnswerRating;
+  failureCause?: FailureCause;
+  reviewNote?: string;
+  retrievedChunks?: RetrievedChunk[];
+  promoted?: boolean;
+  isRefusal?: boolean;
+};
+
+export type GoldenEntry = {
+  id: string;
+  sourceAnswerId?: string;
+  projectLabel: string;
+  question: string;
+  expectedAnswer: string;
+  citations: string[];
+  addedOn: string;
+  lastCheck: "passing" | "failing";
 };
 
 export type ConsoleData = {
@@ -132,6 +163,7 @@ export type ConsoleData = {
   extractions: ExtractionItem[];
   programsLibrary: KnowledgeProgram[];
   answerLog: AssistantAnswer[];
+  goldenSet: GoldenEntry[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
@@ -723,6 +755,324 @@ const initialData: ConsoleData = {
           ],
         },
       ],
+      askedOn: "Sep 19, 2026",
+      rating: "good",
+      promoted: true,
+      retrievedChunks: [
+        {
+          id: "chunk-1",
+          documentTitle: "Increased Housing Program Guidelines, PY2026",
+          excerpt:
+            "Awards are structured as 0% interest construction loans not to exceed $3,000,000 or 85% of total development cost, whichever is less.",
+          page: "p. 7, §2.1",
+          score: 0.94,
+          used: true,
+        },
+        {
+          id: "chunk-2",
+          documentTitle: "Oklahoma Small Cities CDBG Application Guide",
+          excerpt:
+            "Units of general local government in non-entitlement areas are the sole eligible applicants; sub-recipients may carry out activities.",
+          page: "p. 19",
+          score: 0.88,
+          used: true,
+        },
+        {
+          id: "chunk-3",
+          documentTitle: "Practitioner note — Bartlesville Housing Trust call",
+          excerpt:
+            "Bartlesville is a Small Cities community, so the city applies, not the developer.",
+          page: "Sep 19, 2026 call",
+          score: 0.83,
+          used: true,
+        },
+      ],
+    },
+    {
+      id: "answer-2",
+      projectId: "bartlesville-morton",
+      projectLabel: "316 S Morton Ave, Bartlesville, OK",
+      question: "Can the developer apply directly for CDBG Small Cities funds?",
+      coverage: "full",
+      askedOn: "Sep 18, 2026",
+      rating: "good",
+      promoted: true,
+      messages: [
+        {
+          role: "user",
+          text: "Can the developer apply directly for CDBG Small Cities funds?",
+        },
+        {
+          role: "assistant",
+          text: "No. In Oklahoma's Small Cities CDBG program the unit of general local government is the only eligible applicant, so the City of Bartlesville must sponsor and submit the application. The developer participates as a sub-recipient or project partner.[1][2]",
+        },
+      ],
+      retrievedChunks: [
+        {
+          id: "chunk-4",
+          documentTitle: "Oklahoma Small Cities CDBG Application Guide",
+          excerpt:
+            "Eligible applicants: units of general local government in non-entitlement areas.",
+          page: "p. 19",
+          score: 0.95,
+          used: true,
+        },
+        {
+          id: "chunk-5",
+          documentTitle: "Practitioner note — Bartlesville Housing Trust call",
+          excerpt: "City applies, not the developer. Confirmed with Larry Curtis.",
+          page: "Sep 19, 2026 call",
+          score: 0.9,
+          used: true,
+        },
+      ],
+    },
+    {
+      id: "answer-3",
+      projectId: "bartlesville-morton",
+      projectLabel: "316 S Morton Ave, Bartlesville, OK",
+      question: "What is the deadline for the next OHFA funding round?",
+      coverage: "thin",
+      askedOn: "Sep 17, 2026",
+      rating: "wrong",
+      failureCause: "not-loaded",
+      reviewNote:
+        "The PY2026 NOFA has not been loaded into the corpus, so the assistant answered from an older cycle.",
+      messages: [
+        {
+          role: "user",
+          text: "What is the deadline for the next OHFA funding round?",
+        },
+        {
+          role: "assistant",
+          text: "Applications for the Increased Housing Program are due March 1, 2025, with awards announced in May.",
+        },
+      ],
+      retrievedChunks: [
+        {
+          id: "chunk-6",
+          documentTitle: "Increased Housing Program Guidelines, PY2026",
+          excerpt:
+            "Application cycles are announced by separate notice of funding availability.",
+          page: "p. 3",
+          score: 0.61,
+          used: true,
+        },
+      ],
+    },
+    {
+      id: "answer-4",
+      projectId: "bartlesville-morton",
+      projectLabel: "316 S Morton Ave, Bartlesville, OK",
+      question: "Does this parcel qualify for a federal historic tax credit?",
+      coverage: "partial",
+      askedOn: "Sep 16, 2026",
+      rating: "good",
+      isRefusal: true,
+      promoted: true,
+      messages: [
+        {
+          role: "user",
+          text: "Does this parcel qualify for a federal historic tax credit?",
+        },
+        {
+          role: "assistant",
+          text: "I don't have a source in the knowledge base that covers historic tax credit eligibility for this parcel. The lot is currently vacant, and the federal credit applies to certified historic structures, so I can't confirm eligibility without a documented determination.",
+        },
+      ],
+      retrievedChunks: [
+        {
+          id: "chunk-7",
+          documentTitle: "Bartlesville parcel record",
+          excerpt: "316 S Morton Ave — vacant lot, no structure on record.",
+          page: "Parcel data",
+          score: 0.72,
+          used: true,
+        },
+      ],
+    },
+    {
+      id: "answer-5",
+      projectId: "orlando-orange",
+      projectLabel: "1000 N Orange Ave, Orlando, FL",
+      question: "How much SHIP funding can a single rental project receive?",
+      coverage: "partial",
+      askedOn: "Sep 15, 2026",
+      rating: "needs-work",
+      failureCause: "retrieval",
+      reviewNote:
+        "The Orlando Local Housing Assistance Plan is in the corpus but the per-unit subsidy table wasn't retrieved.",
+      messages: [
+        {
+          role: "user",
+          text: "How much SHIP funding can a single rental project receive?",
+        },
+        {
+          role: "assistant",
+          text: "SHIP award limits are set locally by each participating jurisdiction's Local Housing Assistance Plan; Orlando's specific per-unit cap isn't stated in the sources I found.[1]",
+        },
+      ],
+      retrievedChunks: [
+        {
+          id: "chunk-8",
+          documentTitle: "Florida SHIP Program Overview",
+          excerpt:
+            "Maximum award amounts are established in the Local Housing Assistance Plan adopted by each jurisdiction.",
+          page: "p. 5",
+          score: 0.79,
+          used: true,
+        },
+        {
+          id: "chunk-9",
+          documentTitle: "Orlando Local Housing Assistance Plan FY2026-2029",
+          excerpt: "Rental development strategy: maximum award of $75,000 per unit.",
+          page: "p. 31",
+          score: 0.44,
+          used: false,
+        },
+      ],
+    },
+    {
+      id: "answer-6",
+      projectId: "orlando-orange",
+      projectLabel: "1000 N Orange Ave, Orlando, FL",
+      question: "Is 1000 N Orange Ave inside a CDBG-eligible target area?",
+      coverage: "full",
+      askedOn: "Sep 14, 2026",
+      rating: "good",
+      messages: [
+        {
+          role: "user",
+          text: "Is 1000 N Orange Ave inside a CDBG-eligible target area?",
+        },
+        {
+          role: "assistant",
+          text: "Yes. The site falls within a low- and moderate-income area identified in the City of Orlando Consolidated Plan, which makes area-benefit CDBG activities eligible at this location.[1]",
+        },
+      ],
+      retrievedChunks: [
+        {
+          id: "chunk-10",
+          documentTitle: "City of Orlando Consolidated Plan 2025–2029",
+          excerpt:
+            "Target areas include census tracts along the N Orange Ave corridor meeting the 51% LMI threshold.",
+          page: "pp. 62–64",
+          score: 0.91,
+          used: true,
+        },
+      ],
+    },
+    {
+      id: "answer-7",
+      projectId: "baltimore-gold",
+      projectLabel: "572 Gold St, Baltimore, MD",
+      question: "Can HOME and the Affordable Housing Trust Fund be layered here?",
+      coverage: "partial",
+      askedOn: "Sep 12, 2026",
+      rating: "needs-work",
+      failureCause: "prompt",
+      reviewNote:
+        "Right documents were retrieved, but the answer skipped the Trust Fund's affordability-period requirement.",
+      messages: [
+        {
+          role: "user",
+          text: "Can HOME and the Affordable Housing Trust Fund be layered here?",
+        },
+        {
+          role: "assistant",
+          text: "Yes, Baltimore routinely layers HOME with the Affordable Housing Trust Fund on rental projects; both are administered by DHCD.[1]",
+        },
+      ],
+      retrievedChunks: [
+        {
+          id: "chunk-11",
+          documentTitle: "Baltimore City Annual Action Plan FY2026",
+          excerpt:
+            "HOME funds are committed alongside local Trust Fund awards for qualifying rental developments.",
+          page: "p. 44",
+          score: 0.87,
+          used: true,
+        },
+        {
+          id: "chunk-12",
+          documentTitle: "Affordable Housing Trust Fund Guidelines",
+          excerpt:
+            "Assisted units must remain affordable for a minimum of 30 years.",
+          page: "p. 9",
+          score: 0.81,
+          used: true,
+        },
+      ],
+    },
+    {
+      id: "answer-8",
+      projectId: "baltimore-gold",
+      projectLabel: "572 Gold St, Baltimore, MD",
+      question: "What tax increment financing is available for this block?",
+      coverage: "thin",
+      askedOn: "Sep 10, 2026",
+      messages: [
+        {
+          role: "user",
+          text: "What tax increment financing is available for this block?",
+        },
+        {
+          role: "assistant",
+          text: "Baltimore's City-Wide Affordable Housing TIF supports affordable rental development, but the corpus does not yet include the district map or per-project terms, so I can't confirm availability for this block.",
+        },
+      ],
+      retrievedChunks: [
+        {
+          id: "chunk-13",
+          documentTitle: "City-Wide Affordable Housing TIF — summary memo",
+          excerpt:
+            "Program supports affordable rental development citywide; detailed terms to be issued.",
+          page: "p. 2",
+          score: 0.58,
+          used: true,
+        },
+      ],
+    },
+  ],
+  goldenSet: [
+    {
+      id: "golden-1",
+      sourceAnswerId: "answer-2",
+      projectLabel: "316 S Morton Ave, Bartlesville, OK",
+      question: "Can the developer apply directly for CDBG Small Cities funds?",
+      expectedAnswer:
+        "No — Bartlesville is a Small Cities (non-entitlement) community, so the City must sponsor and submit the CDBG application. The developer participates as a sub-recipient or partner, not the applicant of record.",
+      citations: [
+        "Oklahoma Small Cities CDBG Application Guide, Oklahoma Department of Commerce, 2026, p. 19",
+        "Collective Impact practitioner guidance — Bartlesville Housing Trust call, Sep 19, 2026",
+      ],
+      addedOn: "Sep 18, 2026",
+      lastCheck: "passing",
+    },
+    {
+      id: "golden-2",
+      sourceAnswerId: "answer-1",
+      projectLabel: "316 S Morton Ave, Bartlesville, OK",
+      question: "What funding can I use to build affordable housing on this lot?",
+      expectedAnswer:
+        "The Oklahoma Increased Housing Program (OHFA) is the anchor source: a 0% interest construction loan up to $3M or 85% of total development cost for projects of 5–200 units. CDBG Small Cities can fund site prep and infrastructure, with the City as applicant.",
+      citations: [
+        "Increased Housing Program Guidelines, PY2026, Oklahoma Housing Finance Agency, pp. 4–11",
+        "Oklahoma Small Cities CDBG Application Guide, Oklahoma Department of Commerce, pp. 17–24",
+      ],
+      addedOn: "Sep 19, 2026",
+      lastCheck: "passing",
+    },
+    {
+      id: "golden-3",
+      sourceAnswerId: "answer-4",
+      projectLabel: "316 S Morton Ave, Bartlesville, OK",
+      question: "Does this parcel qualify for a federal historic tax credit?",
+      expectedAnswer:
+        "The assistant should refuse: the parcel is a vacant lot and the corpus holds no historic designation record, so eligibility cannot be confirmed. A correct answer declines rather than guessing.",
+      citations: ["Bartlesville parcel record — vacant lot, no structure on file"],
+      addedOn: "Sep 16, 2026",
+      lastCheck: "failing",
     },
   ],
   extractions: [
