@@ -147,7 +147,7 @@ function AnswerLogPage() {
           sourceAnswerId: answer.id,
           projectLabel: answer.projectLabel,
           question: answer.question,
-          expectedAnswer: answerText(answer),
+          expectedAnswer: stripCitations(answerText(answer)),
           citations:
             answer.retrievedChunks
               ?.filter((chunk) => chunk.used)
@@ -234,7 +234,7 @@ function AnswerLogPage() {
                         {!selected && (
                           <td className="max-w-md px-4 py-3 text-muted-foreground">
                             <span className="line-clamp-2">
-                              {answerText(answer)}
+                              {stripCitations(answerText(answer))}
                             </span>
                           </td>
                         )}
@@ -303,7 +303,27 @@ function AnswerLogPage() {
                   </CardHeader>
                   <CardContent className="space-y-5">
                     <div className="rounded-md border bg-muted/30 p-3 text-sm leading-relaxed">
-                      {answerText(selected)}
+                      <CitationText
+                        text={answerText(selected)}
+                        citations={answerCitations(selected)}
+                      />
+                      {answerCitations(selected).length > 0 && (
+                        <div className="mt-3 space-y-2 border-t pt-3">
+                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Sources cited
+                          </p>
+                          {answerCitations(selected).map((citation) => (
+                            <div key={citation.id} className="flex gap-2">
+                              <CitationMarker citation={citation} className="mt-0.5" />
+                              <p className="text-xs leading-relaxed text-muted-foreground">
+                                {citation.isPractitionerKnowledge
+                                  ? `Collective Impact practitioner guidance. ${citation.documentTitle}, ${citation.page}, ${citation.date}.`
+                                  : `${citation.documentTitle}. ${citation.issuingBody}, ${citation.date}, ${citation.page}.`}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
