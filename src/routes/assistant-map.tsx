@@ -56,29 +56,7 @@ function AssistantMapPage() {
               alt="Geospatial MVP map showing Bartlesville project pins"
               className="h-full w-full object-cover object-center"
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10" />
-
-            <div className="absolute bottom-4 left-4 right-4 z-10 sm:bottom-6 sm:left-6 sm:right-auto sm:max-w-sm">
-              <div className="overflow-hidden rounded-lg border bg-card/95 p-4 shadow-lg backdrop-blur">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold">316 S Morton Ave</p>
-                    <p className="text-sm text-muted-foreground">Bartlesville, OK 74003</p>
-                  </div>
-                  <Badge variant="outline">Vacant lot</Badge>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-md bg-muted px-3 py-2">
-                    <p className="text-xs text-muted-foreground">Use</p>
-                    <p className="font-medium">Rental housing</p>
-                  </div>
-                  <div className="rounded-md bg-muted px-3 py-2">
-                    <p className="text-xs text-muted-foreground">Programs loaded</p>
-                    <p className="font-medium">4</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
 
             <div className="absolute left-4 top-4 z-10 hidden sm:block">
               <p className="rounded-md bg-black/60 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur">
