@@ -11,4 +11,4 @@
 - [x] Funding Opportunities (Grants.gov feed)
 - [x] Paste-in manual funding opportunities
 - [x] Client Sites & Alerts
-- [ ] Chicago-style hover citation consistency pass (Assistant & Map, Answer Log, Reports)
+- [x] Chicago-style hover citation consistency pass (Assistant & Map, Answer Log, Reports)
