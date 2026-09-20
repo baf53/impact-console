@@ -76,7 +76,7 @@ export function CitationText({
   const parts = text.split(/(\[\d+\])/g);
 
   return (
-    <p className={className}>
+    <span className={cn("block", className)}>
       {parts.map((part, i) => {
         const match = part.match(/^\[(\d+)\]$/);
         if (match && match[1]) {
@@ -92,6 +92,6 @@ export function CitationText({
         }
         return <Fragment key={i}>{part}</Fragment>;
       })}
-    </p>
+    </span>
   );
 }
