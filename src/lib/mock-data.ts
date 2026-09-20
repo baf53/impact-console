@@ -32,10 +32,27 @@ export type Transcript = {
   rawText: string;
 };
 
+export type ExtractionCategory = "program" | "note" | "contact" | "question";
+export type RoutingLevel = "program-level" | "site-level";
+export type ExtractionStatus = "pending" | "approved" | "rejected";
+
+export type ExtractionItem = {
+  id: string;
+  transcriptId: string;
+  category: ExtractionCategory;
+  title: string;
+  body: string;
+  facts?: string[];
+  routing: RoutingLevel;
+  status: ExtractionStatus;
+  confidence: "High" | "Medium";
+};
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
   transcripts: Transcript[];
+  extractions: ExtractionItem[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
