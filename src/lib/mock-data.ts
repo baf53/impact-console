@@ -48,11 +48,62 @@ export type ExtractionItem = {
   confidence: "High" | "Medium";
 };
 
+export type JurisdictionLevel = "Federal" | "State" | "Local" | "Quasi";
+
+export type SourceDocument = {
+  id: string;
+  title: string;
+  kind: "Regulation" | "Consolidated Plan" | "Annual Action Plan" | "Guidelines" | "NOFA";
+  citation: string;
+  approvedOn: string;
+};
+
+export type PractitionerNote = {
+  id: string;
+  text: string;
+  sourceCall: string;
+  callDate: string;
+  routing: RoutingLevel;
+};
+
+export type ProgramContact = {
+  id: string;
+  name: string;
+  title: string;
+  org: string;
+  phone?: string;
+  email?: string;
+};
+
+export type ProgramAttachment = {
+  id: string;
+  name: string;
+  type: string;
+  size: string;
+};
+
+export type KnowledgeProgram = {
+  id: string;
+  name: string;
+  administrator: string;
+  level: JurisdictionLevel;
+  jurisdiction: string;
+  cities: string[];
+  coverage: number;
+  funds: string;
+  overview: string;
+  documents: SourceDocument[];
+  notes: PractitionerNote[];
+  contacts: ProgramContact[];
+  attachments: ProgramAttachment[];
+};
+
 export type ConsoleData = {
   projects: Project[];
   activity: Activity[];
   transcripts: Transcript[];
   extractions: ExtractionItem[];
+  programsLibrary: KnowledgeProgram[];
   stats: {
     transcriptsThisMonth: number;
     awaitingApproval: number;
