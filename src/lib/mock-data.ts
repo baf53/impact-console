@@ -658,6 +658,7 @@ const initialData: ConsoleData = {
       projectLabel: "316 S Morton Ave, Bartlesville, OK",
       programs: ["Oklahoma Increased Housing Program (OHFA)", "CDBG Small Cities"],
       status: "ready",
+      stage: "in-review",
       rawText:
         "We walked through the Morton Avenue lot today. It's a vacant parcel we acquired last fall, zoned residential, and the plan is two duplexes for long-term rental. The city has been supportive — Bartlesville qualifies as a small city under CDBG, so infrastructure and site prep could be covered there.\n\nOn the OHFA side, the Oklahoma Increased Housing Program looks like the strongest fit. The program is aimed squarely at communities like ours that haven't kept pace with housing demand, and a rental duplex project on infill land checks the boxes. We'll need to confirm the income targeting, but our tenants would fall well within the limits.\n\nTiming-wise, we'd like to close the funding package before winter so site work can start in spring. I'll send over the survey and the pro forma by Friday, and we should talk through whether LIHTC layering makes sense or overcomplicates a project this size.",
     },
