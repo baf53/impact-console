@@ -35,9 +35,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 const navItems = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },
-  { label: "Transcript Intake", to: "/transcript-intake", icon: FileClock },
-  { label: "Funding Opportunities", to: "/funding-opportunities", icon: Landmark },
-  { label: "Review & Approve", to: "/review", icon: CheckSquare2 },
+  { label: "Transcript Intake", to: "/pipeline", icon: FileClock },
+  { label: "Funding Opportunities", to: "/pipeline", icon: Landmark },
+  { label: "Review & Approve", to: "/pipeline", icon: CheckSquare2 },
   { label: "Knowledge Base", to: "/knowledge-base", icon: Database },
   { label: "Assistant & Map", to: "/assistant-map", icon: Bot },
   { label: "Answer Log", to: "/answer-log", icon: MessageSquareText },

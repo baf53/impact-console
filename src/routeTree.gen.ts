@@ -15,6 +15,7 @@ import { Route as AssistantMapRouteImport } from './routes/assistant-map'
 import { Route as ClientSitesRouteImport } from './routes/client-sites'
 import { Route as FundingOpportunitiesRouteImport } from './routes/funding-opportunities'
 import { Route as KnowledgeBaseRouteImport } from './routes/knowledge-base'
+import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as TranscriptIntakeRouteImport } from './routes/transcript-intake'
@@ -51,6 +52,11 @@ const KnowledgeBaseRoute = KnowledgeBaseRouteImport.update({
   path: '/knowledge-base',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/client-sites': typeof ClientSitesRoute
   '/funding-opportunities': typeof FundingOpportunitiesRoute
   '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
+  '/pipeline': typeof PipelineRoute
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/assistant-map': typeof AssistantMapRoute
   '/client-sites': typeof ClientSitesRoute
   '/funding-opportunities': typeof FundingOpportunitiesRoute
+  '/pipeline': typeof PipelineRoute
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/client-sites': typeof ClientSitesRoute
   '/funding-opportunities': typeof FundingOpportunitiesRoute
   '/knowledge-base': typeof KnowledgeBaseRouteWithChildren
+  '/pipeline': typeof PipelineRoute
   '/reports': typeof ReportsRoute
   '/review': typeof ReviewRoute
   '/transcript-intake': typeof TranscriptIntakeRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/client-sites'
     | '/funding-opportunities'
     | '/knowledge-base'
+    | '/pipeline'
     | '/reports'
     | '/review'
     | '/transcript-intake'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/assistant-map'
     | '/client-sites'
     | '/funding-opportunities'
+    | '/pipeline'
     | '/reports'
     | '/review'
     | '/transcript-intake'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/client-sites'
     | '/funding-opportunities'
     | '/knowledge-base'
+    | '/pipeline'
     | '/reports'
     | '/review'
     | '/transcript-intake'
@@ -164,6 +176,7 @@ export interface RootRouteChildren {
   ClientSitesRoute: typeof ClientSitesRoute
   FundingOpportunitiesRoute: typeof FundingOpportunitiesRoute
   KnowledgeBaseRoute: typeof KnowledgeBaseRouteWithChildren
+  PipelineRoute: typeof PipelineRoute
   ReportsRoute: typeof ReportsRoute
   ReviewRoute: typeof ReviewRoute
   TranscriptIntakeRoute: typeof TranscriptIntakeRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       path: '/knowledge-base'
       fullPath: '/knowledge-base'
       preLoaderRoute: typeof KnowledgeBaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -272,6 +292,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientSitesRoute: ClientSitesRoute,
   FundingOpportunitiesRoute: FundingOpportunitiesRoute,
   KnowledgeBaseRoute: KnowledgeBaseRouteWithChildren,
+  PipelineRoute: PipelineRoute,
   ReportsRoute: ReportsRoute,
   ReviewRoute: ReviewRoute,
   TranscriptIntakeRoute: TranscriptIntakeRoute,
