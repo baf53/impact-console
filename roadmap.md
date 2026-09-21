@@ -12,3 +12,5 @@
 - [x] Paste-in manual funding opportunities
 - [x] Client Sites & Alerts
 - [x] Chicago-style hover citation consistency pass (Assistant & Map, Answer Log, Reports)
+- [x] Merged Documents into Knowledge Base tab
+- [x] Merged Transcript Intake + Funding Opportunities + Review & Approve into one Pipeline kanban
