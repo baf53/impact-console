@@ -22,6 +22,8 @@ export type Activity = {
 
 export type TranscriptStatus = "new" | "extracting" | "ready" | "approved";
 
+export type PipelineStage = "intake" | "extracted" | "in-review" | "approved";
+
 export type Transcript = {
   id: string;
   organization: string;
@@ -30,6 +32,7 @@ export type Transcript = {
   projectLabel: string;
   programs: string[];
   status: TranscriptStatus;
+  stage?: PipelineStage;
   rawText: string;
 };
 
