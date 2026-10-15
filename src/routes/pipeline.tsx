@@ -776,8 +776,20 @@ function PipelinePage() {
                 ? `AI extraction ready (${integration.geminiModel})`
                 : "AI extraction: waiting for Gemini key"}
             </StatusDot>
-            <StatusDot tone={transcriptsQuery.isError ? "error" : "ok"}>
-              {transcriptsQuery.isError ? "Supabase unreachable" : "Supabase connected"}
+            <StatusDot
+              tone={
+                transcriptsQuery.isError
+                  ? "error"
+                  : integration && !integration.supabaseSecretKey
+                    ? "warn"
+                    : "ok"
+              }
+            >
+              {transcriptsQuery.isError
+                ? "Supabase unreachable"
+                : integration && !integration.supabaseSecretKey
+                  ? "Supabase connected · public key (add SUPABASE_SECRET_KEY)"
+                  : "Supabase connected"}
             </StatusDot>
           </div>
         </div>

@@ -19,15 +19,9 @@ import {
   stateFromLabel,
 } from "@/lib/states";
 import { DEFAULT_GEMINI_MODEL, extractTranscript, hasGeminiKey } from "@/server/ai.server";
+import { logActivity } from "@/server/activity.server";
 import { dbError, getServerSupabase, hasSecretKey } from "@/server/supabase.server";
 import type { Database } from "@/types/database";
-
-type ActivityInsert = Database["public"]["Tables"]["app_activity_log"]["Insert"];
-
-async function logActivity(entry: ActivityInsert) {
-  const { error } = await getServerSupabase().from("app_activity_log").insert(entry);
-  if (error) console.error("Activity log write failed:", error.message);
-}
 
 async function getTranscript(id: string): Promise<TranscriptRow> {
   const { data, error } = await getServerSupabase()

@@ -161,6 +161,52 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["program_notes"]["Insert"]>;
         Relationships: [];
       };
+      program_contacts: {
+        Row: {
+          id: string;
+          program_id: string;
+          name: string;
+          title: string;
+          org: string;
+          phone: string | null;
+          email: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          program_id: string;
+          name: string;
+          title: string;
+          org: string;
+          phone?: string | null;
+          email?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["program_contacts"]["Insert"]>;
+        Relationships: [];
+      };
+      program_documents: {
+        Row: {
+          id: string;
+          program_id: string;
+          title: string;
+          kind: string;
+          citation: string;
+          approved_on: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          program_id: string;
+          title: string;
+          kind: string;
+          citation: string;
+          approved_on: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["program_documents"]["Insert"]>;
+        Relationships: [];
+      };
       app_documents: {
         Row: {
           id: string;

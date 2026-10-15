@@ -1,14 +1,8 @@
 import { useMemo, useState } from "react";
-import { Download, FileText, Search, Upload, X } from "lucide-react";
+import { FileText, Search, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  consoleStore,
-  documentTypes,
-  useConsoleData,
-  type LibraryDocument,
-  type LibraryDocumentType,
-} from "@/lib/mock-data";
+import { DocumentActions, DocumentStatusBadge } from "@/components/document-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,67 +15,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { useDocuments, useUploadDocument } from "@/hooks/use-documents";
+import { usePrograms } from "@/hooks/use-pipeline";
+import { DOCUMENT_TYPES, type DocumentType } from "@/lib/documents";
 
 const ALL = "__all__";
+const NO_PROGRAM = "__none__";
 
-function downloadPlaceholder(doc: LibraryDocument) {
-  const body = [
-    doc.title,
-    "",
-    `Type: ${doc.type}`,
-    `Program: ${doc.program}`,
-    `Jurisdiction: ${doc.jurisdiction}`,
-    `Status: ${doc.status}`,
-    `Added: ${doc.addedOn}`,
-    "",
-    "Placeholder file — the real source document is not bundled in this console.",
-  ].join("\n");
-  const url = URL.createObjectURL(new Blob([body], { type: "text/plain" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = doc.fileName.replace(/\.pdf$/, ".txt");
-  link.click();
-  URL.revokeObjectURL(url);
-  toast.success("Download started", { description: doc.title });
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function UploadForm({ onClose }: { onClose: () => void }) {
-  const data = useConsoleData();
+  const { data: programs = [] } = usePrograms();
+  const upload = useUploadDocument();
+  const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [type, setType] = useState<LibraryDocumentType>("Agency guidance");
-  const [program, setProgram] = useState("");
-  const [jurisdiction, setJurisdiction] = useState("");
-
-  const programs = Array.from(new Set(data.documents.map((doc) => doc.program))).sort();
-  const jurisdictions = Array.from(
-    new Set(data.documents.map((doc) => doc.jurisdiction)),
-  ).sort();
+  const [type, setType] = useState<DocumentType>("Agency guidance");
+  const [programId, setProgramId] = useState(NO_PROGRAM);
 
   const submit = () => {
-    if (!title.trim() || !program || !jurisdiction) {
-      toast.error("Add a title, program, and jurisdiction first.");
+    if (!file || !title.trim()) {
+      toast.error("Choose a file and give it a title first.");
       return;
     }
-    const entry: LibraryDocument = {
-      id: `doc-${Date.now()}`,
-      title: title.trim(),
-      type,
-      program,
-      jurisdiction,
-      status: "Pending review",
-      addedOn: "Today",
-      fileName: fileName || `${title.trim().toLowerCase().replace(/\s+/g, "-")}.pdf`,
-    };
-    consoleStore.update((current) => ({
-      ...current,
-      documents: [entry, ...current.documents],
-    }));
-    toast.success("Uploaded as Pending review", {
-      description: "It stays out of the corpus until you approve it.",
-    });
-    onClose();
+    upload.mutate(
+      {
+        file,
+        title: title.trim(),
+        type,
+        ...(programId !== NO_PROGRAM ? { programId } : {}),
+      },
+      { onSuccess: onClose },
+    );
   };
 
   return (
@@ -98,11 +68,11 @@ function UploadForm({ onClose }: { onClose: () => void }) {
           <Input
             id="doc-file"
             type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg"
             onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (!file) return;
-              setFileName(file.name);
-              if (!title) setTitle(file.name.replace(/\.[^.]+$/, ""));
+              const chosen = event.target.files?.[0] ?? null;
+              setFile(chosen);
+              if (chosen && !title) setTitle(chosen.name.replace(/\.[^.]+$/, ""));
             }}
           />
         </div>
@@ -116,13 +86,13 @@ function UploadForm({ onClose }: { onClose: () => void }) {
           />
         </div>
         <div className="grid gap-2">
-          <Label>Type</Label>
-          <Select value={type} onValueChange={(value) => setType(value as LibraryDocumentType)}>
-            <SelectTrigger>
+          <Label htmlFor="doc-type">Type</Label>
+          <Select value={type} onValueChange={(value) => setType(value as DocumentType)}>
+            <SelectTrigger id="doc-type">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {documentTypes.map((item) => (
+              {DOCUMENT_TYPES.map((item) => (
                 <SelectItem key={item} value={item}>
                   {item}
                 </SelectItem>
@@ -130,43 +100,34 @@ function UploadForm({ onClose }: { onClose: () => void }) {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid gap-2">
-          <Label>Program</Label>
-          <Select value={program} onValueChange={setProgram}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a program" />
+        <div className="grid gap-2 md:col-span-2">
+          <Label htmlFor="doc-program">Program</Label>
+          <Select value={programId} onValueChange={setProgramId}>
+            <SelectTrigger id="doc-program">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {programs.map((item) => (
-                <SelectItem key={item} value={item}>
-                  {item}
+              <SelectItem value={NO_PROGRAM}>Not linked to a program</SelectItem>
+              {programs.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name} · {p.state}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">
+            Linking a program tags the document with that program's state for the chatbot.
+          </p>
         </div>
-        <div className="grid gap-2">
-          <Label>Jurisdiction</Label>
-          <Select value={jurisdiction} onValueChange={setJurisdiction}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a jurisdiction" />
-            </SelectTrigger>
-            <SelectContent>
-              {jurisdictions.map((item) => (
-                <SelectItem key={item} value={item}>
-                  {item}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-2 md:col-span-2">
-          <Button onClick={submit}>Add to library</Button>
-          <Button variant="ghost" onClick={onClose}>
+        <div className="flex flex-wrap items-center gap-2 md:col-span-2">
+          <Button onClick={submit} disabled={upload.isPending}>
+            {upload.isPending ? "Uploading…" : "Upload"}
+          </Button>
+          <Button variant="ghost" onClick={onClose} disabled={upload.isPending}>
             Cancel
           </Button>
           <span className="text-xs text-muted-foreground">
-            New uploads land as “Pending review” and stay out of the corpus.
+            New uploads land as “Pending review” and stay out of the corpus until approved.
           </span>
         </div>
       </CardContent>
@@ -175,33 +136,30 @@ function UploadForm({ onClose }: { onClose: () => void }) {
 }
 
 export function DocumentsLibrary() {
-  const data = useConsoleData();
+  const { data: documents = [], isLoading, isError, error, refetch } = useDocuments();
   const [query, setQuery] = useState("");
   const [type, setType] = useState(ALL);
   const [program, setProgram] = useState(ALL);
-  const [jurisdiction, setJurisdiction] = useState(ALL);
+  const [state, setState] = useState(ALL);
   const [uploadOpen, setUploadOpen] = useState(false);
 
   const programs = useMemo(
-    () => Array.from(new Set(data.documents.map((doc) => doc.program))).sort(),
-    [data.documents],
+    () =>
+      Array.from(new Set(documents.map((doc) => doc.program).filter(Boolean))).sort() as string[],
+    [documents],
   );
-  const jurisdictions = useMemo(
-    () => Array.from(new Set(data.documents.map((doc) => doc.jurisdiction))).sort(),
-    [data.documents],
+  const states = useMemo(
+    () => Array.from(new Set(documents.map((doc) => doc.state).filter(Boolean))).sort() as string[],
+    [documents],
   );
 
-  const rows = data.documents.filter((doc) => {
-    const matchesQuery =
-      query.trim() === "" ||
-      `${doc.title} ${doc.program} ${doc.jurisdiction}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase());
+  const rows = documents.filter((doc) => {
+    const haystack = `${doc.title} ${doc.file_name} ${doc.program ?? ""} ${doc.jurisdiction ?? ""}`;
     return (
-      matchesQuery &&
+      (query.trim() === "" || haystack.toLowerCase().includes(query.trim().toLowerCase())) &&
       (type === ALL || doc.type === type) &&
       (program === ALL || doc.program === program) &&
-      (jurisdiction === ALL || doc.jurisdiction === jurisdiction)
+      (state === ALL || doc.state === state)
     );
   });
 
@@ -209,11 +167,9 @@ export function DocumentsLibrary() {
     setQuery("");
     setType(ALL);
     setProgram(ALL);
-    setJurisdiction(ALL);
+    setState(ALL);
   };
-
-  const filtersActive =
-    query.trim() !== "" || type !== ALL || program !== ALL || jurisdiction !== ALL;
+  const filtersActive = query.trim() !== "" || type !== ALL || program !== ALL || state !== ALL;
 
   return (
     <div className="space-y-6">
@@ -221,7 +177,8 @@ export function DocumentsLibrary() {
         <div className="space-y-1">
           <h2 className="text-lg font-semibold tracking-tight">Documents</h2>
           <p className="text-sm text-muted-foreground">
-            Every source document behind the corpus — searchable, filterable, downloadable.
+            Source documents behind the corpus, stored in Supabase Storage. Only approved documents
+            that aren't tied to a client are visible to the chatbot.
           </p>
         </div>
         <Button onClick={() => setUploadOpen(true)}>
@@ -231,6 +188,15 @@ export function DocumentsLibrary() {
       </header>
 
       {uploadOpen ? <UploadForm onClose={() => setUploadOpen(false)} /> : null}
+
+      {isError && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border border-destructive/40 bg-destructive/5 px-4 py-3 text-xs text-foreground">
+          <span>{(error as Error).message}</span>
+          <Button size="sm" variant="outline" onClick={() => refetch()}>
+            Retry
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardContent className="grid gap-3 pt-6 md:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))_auto]">
@@ -250,7 +216,7 @@ export function DocumentsLibrary() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All types</SelectItem>
-              {documentTypes.map((item) => (
+              {DOCUMENT_TYPES.map((item) => (
                 <SelectItem key={item} value={item}>
                   {item}
                 </SelectItem>
@@ -270,13 +236,13 @@ export function DocumentsLibrary() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={jurisdiction} onValueChange={setJurisdiction}>
-            <SelectTrigger aria-label="Filter by jurisdiction">
-              <SelectValue placeholder="Jurisdiction" />
+          <Select value={state} onValueChange={setState}>
+            <SelectTrigger aria-label="Filter by state">
+              <SelectValue placeholder="State" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All jurisdictions</SelectItem>
-              {jurisdictions.map((item) => (
+              <SelectItem value={ALL}>All states</SelectItem>
+              {states.map((item) => (
                 <SelectItem key={item} value={item}>
                   {item}
                 </SelectItem>
@@ -295,21 +261,21 @@ export function DocumentsLibrary() {
             {rows.length} {rows.length === 1 ? "document" : "documents"}
           </CardTitle>
           <span className="text-xs text-muted-foreground">
-            {data.documents.filter((doc) => doc.status === "Pending review").length} pending review
+            {documents.filter((doc) => doc.status === "Pending review").length} pending review
           </span>
         </CardHeader>
         <CardContent className="px-0 pb-0">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="w-full min-w-[960px] text-sm">
               <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-6 py-3 text-left font-medium">Document</th>
                   <th className="px-3 py-3 text-left font-medium">Type</th>
                   <th className="px-3 py-3 text-left font-medium">Program</th>
-                  <th className="px-3 py-3 text-left font-medium">Jurisdiction</th>
+                  <th className="px-3 py-3 text-left font-medium">State</th>
                   <th className="px-3 py-3 text-left font-medium">Status</th>
                   <th className="px-3 py-3 text-left font-medium">Added</th>
-                  <th className="px-6 py-3 text-right font-medium">File</th>
+                  <th className="px-6 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -320,45 +286,37 @@ export function DocumentsLibrary() {
                         <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                         <div className="min-w-0">
                           <p className="font-medium leading-tight">{doc.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{doc.fileName}</p>
+                          <p className="truncate text-xs text-muted-foreground">{doc.file_name}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-3 py-3">
                       <Badge variant="outline">{doc.type}</Badge>
                     </td>
-                    <td className="px-3 py-3 text-muted-foreground">{doc.program}</td>
-                    <td className="px-3 py-3 text-muted-foreground">{doc.jurisdiction}</td>
+                    <td className="px-3 py-3 text-muted-foreground">{doc.program ?? "—"}</td>
+                    <td className="px-3 py-3 text-muted-foreground">{doc.state ?? "—"}</td>
                     <td className="px-3 py-3">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                          doc.status === "Approved"
-                            ? "bg-primary/10 text-primary"
-                            : "bg-warning/15 text-warning-foreground",
-                        )}
-                      >
-                        {doc.status}
-                      </span>
+                      <DocumentStatusBadge status={doc.status} />
                     </td>
-                    <td className="px-3 py-3 text-muted-foreground">{doc.addedOn}</td>
-                    <td className="px-6 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => downloadPlaceholder(doc)}
-                        aria-label={`Download ${doc.title}`}
-                      >
-                        <Download />
-                        Download
-                      </Button>
+                    <td className="px-3 py-3 whitespace-nowrap text-muted-foreground">
+                      {formatDate(doc.created_at)}
+                    </td>
+                    <td className="px-6 py-3">
+                      <DocumentActions doc={doc} />
                     </td>
                   </tr>
                 ))}
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-sm text-muted-foreground">
-                      No documents match these filters.
+                    <td
+                      colSpan={7}
+                      className="px-6 py-12 text-center text-sm text-muted-foreground"
+                    >
+                      {isLoading
+                        ? "Loading documents…"
+                        : documents.length === 0
+                          ? "No documents yet. Upload guidelines, NOFAs, or application forms."
+                          : "No documents match these filters."}
                     </td>
                   </tr>
                 ) : null}
