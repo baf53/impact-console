@@ -26,6 +26,7 @@ export const PIPELINE_KEYS = {
 export const PROGRAMS_KEY = ["programs"] as const;
 export const ACTIVITY_KEY = ["activity-log"] as const;
 export const DASHBOARD_KEY = ["dashboard"] as const;
+export const DEALS_KEY = ["deals"] as const;
 
 function errorMessage(err: unknown) {
   return err instanceof Error ? err.message : String(err);
@@ -209,6 +210,7 @@ export function useApproveTranscript() {
       queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() });
       queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.clients() });
       queryClient.invalidateQueries({ queryKey: PROGRAMS_KEY });
+      queryClient.invalidateQueries({ queryKey: DEALS_KEY });
       invalidateFeeds(queryClient);
       toast.success("Transcript approved", {
         description:

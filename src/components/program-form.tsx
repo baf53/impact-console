@@ -24,7 +24,7 @@ function toForm(program?: ProgramRow): FormState {
     state: (program?.state as ProgramInput["state"] | undefined) ?? "OK",
     level: program?.level ?? "State",
     administrator: program?.administrator ?? "",
-    jurisdiction: program?.jurisdiction ?? "",
+    jurisdiction: program?.jurisdiction ?? STATE_NAMES["OK"] ?? "",
     cities: program?.cities.join(", ") ?? "",
     funds: program?.funds ?? "",
     overview: program?.overview ?? "",
@@ -89,7 +89,11 @@ export function ProgramForm({
             setForm((f) => ({
               ...f,
               state,
-              jurisdiction: f.jurisdiction || (STATE_NAMES[state] ?? state),
+              // Keep a hand-typed jurisdiction; replace the previous state's default name.
+              jurisdiction:
+                !f.jurisdiction || f.jurisdiction === (STATE_NAMES[f.state] ?? f.state)
+                  ? (STATE_NAMES[state] ?? state)
+                  : f.jurisdiction,
               level: state === "Federal" ? "Federal" : f.level,
             }));
           }}

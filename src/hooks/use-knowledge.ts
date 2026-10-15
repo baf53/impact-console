@@ -10,7 +10,7 @@ import {
   updateProgramFn,
   type ProgramInput,
 } from "@/functions/knowledge";
-import { ACTIVITY_KEY, DASHBOARD_KEY, PROGRAMS_KEY } from "@/hooks/use-pipeline";
+import { ACTIVITY_KEY, DASHBOARD_KEY, DEALS_KEY, PROGRAMS_KEY } from "@/hooks/use-pipeline";
 
 const KNOWLEDGE_KEYS = {
   summaries: () => [...PROGRAMS_KEY, "summaries"] as const,
@@ -45,6 +45,7 @@ function useInvalidateKnowledge() {
     queryClient.invalidateQueries({ queryKey: PROGRAMS_KEY });
     queryClient.invalidateQueries({ queryKey: ACTIVITY_KEY });
     queryClient.invalidateQueries({ queryKey: DASHBOARD_KEY });
+    queryClient.invalidateQueries({ queryKey: DEALS_KEY });
   };
 }
 
@@ -55,7 +56,9 @@ export function useCreateProgram() {
     onSuccess: (program) => {
       invalidate();
       toast.success("Program added to the Knowledge Base", {
-        description: `${program.name} · ${program.state}`,
+        description: program.alertsDrafted
+          ? `${program.name} · ${program.state} · ${program.alertsDrafted} client alert${program.alertsDrafted > 1 ? "s" : ""} drafted for review`
+          : `${program.name} · ${program.state}`,
       });
     },
     onError: (err) => toast.error("Could not add program", { description: errorMessage(err) }),

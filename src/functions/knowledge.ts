@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { KNOWLEDGE_STATES, slugify } from "@/lib/states";
+import { KNOWLEDGE_STATES, STATE_NAMES, slugify } from "@/lib/states";
 import { logActivity } from "@/server/activity.server";
 import { dbError, getServerSupabase } from "@/server/supabase.server";
 import type { Database } from "@/types/database";
@@ -119,14 +119,59 @@ export const createProgramFn = createServerFn({ method: "POST" })
       .single();
     if (error) throw dbError(error, "Could not create program");
 
+    const drafted = await draftNewProgramAlerts(created);
     await logActivity({
       action: "Program added",
       subject: created.name,
-      detail: `${created.level} · ${created.state} · ${created.administrator}`,
+      detail: `${created.level} · ${created.state} · ${created.administrator}${drafted ? ` · ${drafted} client alert${drafted > 1 ? "s" : ""} drafted` : ""}`,
       status: "updated",
     });
-    return created;
+    return { ...created, alertsDrafted: drafted };
   });
+
+/**
+ * Drafts (never sends) a "New program" alert for every subscribed client the program
+ * could apply to: clients in its state, or every client for Federal programs.
+ */
+async function draftNewProgramAlerts(program: ProgramRow): Promise<number> {
+  const db = getServerSupabase();
+  let query = db.from("clients").select("*").eq("alerts_enabled", true);
+  if (program.state !== "Federal") query = query.eq("state", program.state);
+  const { data: clients, error } = await query;
+  if (error) {
+    console.error("Could not load clients for alerts:", error.message);
+    return 0;
+  }
+  if (clients.length === 0) return 0;
+
+  const where = STATE_NAMES[program.state] ?? program.state;
+  const { error: insertError } = await db.from("client_alerts").insert(
+    clients.map((client) => ({
+      client_id: client.id,
+      title: `New program loaded: ${program.name}`,
+      trigger: "New program",
+      status: "draft" as const,
+      draft_email: [
+        `Hi ${client.contact_name || client.client_name},`,
+        "",
+        `A new ${program.level.toLowerCase()} funding program is now in our Knowledge Base for ${where}: ${program.name} (${program.administrator}).`,
+        "",
+        program.overview,
+        "",
+        `Funds: ${program.funds}`,
+        "",
+        `It may be relevant to ${client.parcel_address}. Happy to walk through fit on our next call.`,
+        "",
+        "— Collective Impact",
+      ].join("\n"),
+    })),
+  );
+  if (insertError) {
+    console.error("Could not draft client alerts:", insertError.message);
+    return 0;
+  }
+  return clients.length;
+}
 
 export const updateProgramFn = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string().min(1), fields: programFields }))
