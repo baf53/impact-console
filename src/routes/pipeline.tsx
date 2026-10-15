@@ -1,24 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  AlertCircle,
   Building2,
   Check,
   CircleCheck,
-  ExternalLink,
+  FileText,
   Landmark,
   Leaf,
+  Loader2,
   Lock,
-  MessageSquareQuote,
   Pencil,
   Plus,
   ShieldCheck,
   Sparkles,
   Undo2,
-  User,
   X,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { MeetingIntakeForm } from "@/components/meeting-intake-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,23 +29,40 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import {
-  consoleStore,
-  useConsoleData,
+  useApproveTranscript,
+  useClients,
+  useCreateOpportunity,
+  useIntegrationStatus,
+  usePrograms,
+  useRunExtraction,
+  useTranscripts,
+  useUpdateExtraction,
+  useUpdateTranscriptStage,
+} from "@/hooks/use-pipeline";
+import { consoleStore, useConsoleData, type ManualSourceType } from "@/lib/mock-data";
+import {
+  NEW_PROGRAM,
+  meetingLabel,
   type ExtractionCategory,
-  type ExtractionItem,
-  type FundingOpportunity,
-  type ManualOpportunity,
-  type ManualSourceType,
+  type ExtractionRow,
   type PipelineStage,
-  type RoutingLevel,
-  type Transcript,
-} from "@/lib/mock-data";
+  type ProgramRow,
+  type TranscriptWithExtractions,
+} from "@/lib/pipeline";
+import {
+  KNOWLEDGE_STATES,
+  candidatePrograms,
+  matchProgram,
+  stateFromLabel,
+  stateLabel,
+} from "@/lib/states";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/pipeline")({
   head: () => ({
@@ -53,13 +71,13 @@ export const Route = createFileRoute("/pipeline")({
       {
         name: "description",
         content:
-          "One board for call transcripts and funding opportunities moving from intake to approved knowledge.",
+          "Ingest Granola/Zoom call transcripts and funding opportunities into state knowledge.",
       },
       { property: "og:title", content: "Pipeline — Collective Impact" },
       {
         property: "og:description",
         content:
-          "One board for call transcripts and funding opportunities moving from intake to approved knowledge.",
+          "Ingest Granola/Zoom call transcripts and funding opportunities into state knowledge.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -77,267 +95,49 @@ const stages: { id: PipelineStage; label: string; blurb: string }[] = [
   { id: "approved", label: "Approved", blurb: "Sent to the Knowledge Base" },
 ];
 
-type CardRef =
-  | { kind: "transcript"; id: string }
-  | { kind: "opportunity"; id: string }
-  | { kind: "manual"; id: string };
+type CardRef = { kind: "transcript"; id: string } | { kind: "opportunity"; id: string };
 
-function transcriptStage(t: Transcript): PipelineStage {
-  if (t.status === "approved") return "approved";
-  return t.stage ?? (t.status === "ready" ? "extracted" : "intake");
+function transcriptStage(t: TranscriptWithExtractions): PipelineStage {
+  return t.status === "approved" ? "approved" : t.stage;
 }
 
-function setTranscriptStage(t: Transcript, stage: PipelineStage) {
-  if (stage === "approved") {
-    approveTranscript(t);
-    return;
-  }
-  consoleStore.update((current) => ({
-    ...current,
-    transcripts: current.transcripts.map((x) =>
-      x.id === t.id
-        ? {
-            ...x,
-            stage,
-            status: x.status === "approved" ? ("ready" as const) : x.status,
-          }
-        : x,
-    ),
-    stats:
-      t.status === "approved"
-        ? { ...current.stats, awaitingApproval: current.stats.awaitingApproval + 1 }
-        : current.stats,
-  }));
-}
-
-function approveTranscript(transcript: Transcript) {
-  let approvedCount = 0;
-  consoleStore.update((current) => {
-    approvedCount = current.extractions.filter(
-      (e) => e.transcriptId === transcript.id && e.status === "approved",
-    ).length;
-    return {
-      ...current,
-      transcripts: current.transcripts.map((t) =>
-        t.id === transcript.id ? { ...t, status: "approved" as const, stage: "approved" as const } : t,
-      ),
-      stats: { ...current.stats, awaitingApproval: Math.max(0, current.stats.awaitingApproval - 1) },
-      activity: [
-        {
-          id: `activity-${Date.now()}`,
-          action: "Transcript approved",
-          subject: transcript.projectLabel.split(",")[0] ?? transcript.projectLabel,
-          detail: `${approvedCount} items sent to the knowledge base`,
-          occurredAt: "Just now",
-          status: "approved" as const,
-        },
-        ...current.activity,
-      ].slice(0, 8),
-    };
-  });
-  toast.success(`${approvedCount} items sent to Knowledge Base`, {
-    description: transcript.projectLabel,
-  });
-}
-
-function updateItem(id: string, patch: Partial<ExtractionItem>) {
-  consoleStore.update((current) => ({
-    ...current,
-    extractions: current.extractions.map((item) => (item.id === id ? { ...item, ...patch } : item)),
-  }));
-}
-
-function setOpportunityStatus(id: string, status: FundingOpportunity["status"]) {
-  consoleStore.update((current) => ({
-    ...current,
-    opportunities: current.opportunities.map((opp) => (opp.id === id ? { ...opp, status } : opp)),
-  }));
-}
-
-function addToCorpus(opp: FundingOpportunity) {
-  const transcriptId = `transcript-opp-${opp.id}`;
-  consoleStore.update((current) => {
-    if (current.transcripts.some((t) => t.id === transcriptId)) return current;
-    return {
-      ...current,
-      opportunities: current.opportunities.map((o) =>
-        o.id === opp.id ? { ...o, status: "added" as const } : o,
-      ),
-      stats: { ...current.stats, awaitingApproval: current.stats.awaitingApproval + 1 },
-      transcripts: [
-        {
-          id: transcriptId,
-          organization: `Grants.gov — ${opp.agency}`,
-          callDate: opp.postedDate,
-          projectId: "federal-feed",
-          projectLabel: `${opp.agency} opportunity ${opp.assistanceListing}`,
-          programs: [opp.title.split("—")[0]?.trim() ?? opp.title],
-          status: "ready" as const,
-          stage: "in-review" as const,
-          rawText: `${opp.title}\n\nAgency: ${opp.agency} — Assistance Listing ${opp.assistanceListing}\nPosted: ${opp.postedDate} · Closes: ${opp.closeDate} · Award ceiling: ${opp.awardCeiling}\n\n${opp.summary}`,
-        },
-        ...current.transcripts,
-      ],
-      extractions: [
-        {
-          id: `ex-opp-${opp.id}-1`,
-          transcriptId,
-          category: "program" as const,
-          title: opp.title,
-          body: opp.summary,
-          facts: [
-            `Agency: ${opp.agency}`,
-            `Assistance Listing: ${opp.assistanceListing}`,
-            `Posted: ${opp.postedDate}`,
-            `Closes: ${opp.closeDate}`,
-            `Award ceiling: ${opp.awardCeiling}`,
-          ],
-          routing: "program-level" as const,
-          status: "pending" as const,
-          confidence: "Medium" as const,
-        },
-        {
-          id: `ex-opp-${opp.id}-2`,
-          transcriptId,
-          category: "question" as const,
-          title: "Does this opportunity fit an active project?",
-          body: "Synced from Grants.gov. A practitioner should confirm eligibility against current parcels before adding program terms to the knowledge base.",
-          routing: "program-level" as const,
-          status: "pending" as const,
-          confidence: "Medium" as const,
-        },
-        ...current.extractions,
-      ],
-      activity: [
-        {
-          id: `activity-opp-${Date.now()}`,
-          action: "Opportunity queued for review",
-          subject: opp.title.split("—")[0]?.trim() ?? opp.title,
-          detail: `${opp.agency} · closes ${opp.closeDate}`,
-          occurredAt: "Just now",
-          status: "review" as const,
-        },
-        ...current.activity,
-      ],
-    };
-  });
-  toast.success("Moved to In Review", {
-    description: "Nothing reaches the Knowledge Base until it lands in Approved.",
-  });
-}
-
-function sendManualToReview(item: ManualOpportunity) {
-  const transcriptId = `transcript-manual-${item.id}`;
-  consoleStore.update((current) => {
-    if (current.transcripts.some((t) => t.id === transcriptId)) return current;
-    return {
-      ...current,
-      manualOpportunities: current.manualOpportunities.map((m) =>
-        m.id === item.id ? { ...m, status: "added" as const } : m,
-      ),
-      stats: { ...current.stats, awaitingApproval: current.stats.awaitingApproval + 1 },
-      transcripts: [
-        {
-          id: transcriptId,
-          organization: item.funder,
-          callDate: item.addedOn,
-          projectId: "manual-source",
-          projectLabel: `${item.funder} · ${item.geography}`,
-          programs: [item.programType],
-          status: "ready" as const,
-          stage: "in-review" as const,
-          rawText: `${item.title}\n\nFunder: ${item.funder}\nSource: ${item.sourceType} — ${item.sourceUrl}\nGeography served: ${item.geography}\nProgram type: ${item.programType}\n\n${item.pastedDetails}`,
-        },
-        ...current.transcripts,
-      ],
-      extractions: [
-        {
-          id: `ex-manual-${item.id}-1`,
-          transcriptId,
-          category: "program" as const,
-          title: item.title,
-          body: item.pastedDetails,
-          facts: [
-            `Funder: ${item.funder}`,
-            `Program type: ${item.programType}`,
-            `Geography served: ${item.geography}`,
-            `Source: ${item.sourceType}`,
-          ],
-          routing: "program-level" as const,
-          status: "pending" as const,
-          confidence: "Medium" as const,
-        },
-        {
-          id: `ex-manual-${item.id}-2`,
-          transcriptId,
-          category: "question" as const,
-          title: "Is this source authoritative enough to publish?",
-          body: `Captured manually from ${item.sourceType.toLowerCase()} — no published notice exists. Confirm terms with the funder before the assistant cites it.`,
-          routing: "program-level" as const,
-          status: "pending" as const,
-          confidence: "Medium" as const,
-        },
-        ...current.extractions,
-      ],
-      activity: [
-        {
-          id: `activity-manual-${Date.now()}`,
-          action: "Manual opportunity queued for review",
-          subject: item.funder,
-          detail: `${item.sourceType} · ${item.geography}`,
-          occurredAt: "Just now",
-          status: "review" as const,
-        },
-        ...current.activity,
-      ],
-    };
-  });
-  toast.success("Moved to In Review", {
-    description: `${item.title} isn't live until you approve it.`,
-  });
-}
-
-/* ------------------------------ manual add form --------------------------- */
+/* ------------------------- manual opportunity form ------------------------ */
 
 const sourceTypes: ManualSourceType[] = ["Social", "LinkedIn", "Foundation site", "Email", "Other"];
+type KnowledgeState = (typeof KNOWLEDGE_STATES)[number];
 
-const emptyForm = {
+const emptyManualForm = {
   title: "",
   funder: "",
   sourceUrl: "",
   geography: "",
   programType: "",
   sourceType: "LinkedIn" as ManualSourceType,
+  state: "OK" as KnowledgeState,
   pastedDetails: "",
 };
 
 function QuickAddForm({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState(emptyForm);
-  const set = (key: keyof typeof emptyForm, value: string) =>
+  const [form, setForm] = useState(emptyManualForm);
+  const createOpportunity = useCreateOpportunity();
+  const set = <K extends keyof typeof emptyManualForm>(key: K, value: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
   const canSave = form.title.trim().length > 0 && form.funder.trim().length > 0;
 
   const save = () => {
-    const item: ManualOpportunity = {
-      id: `manual-${Date.now()}`,
-      title: form.title.trim(),
-      funder: form.funder.trim(),
-      sourceUrl: form.sourceUrl.trim(),
-      geography: form.geography.trim(),
-      programType: form.programType.trim() || "Unclassified",
-      sourceType: form.sourceType,
-      pastedDetails: form.pastedDetails.trim(),
-      status: "pending",
-      addedOn: "Today",
-    };
-    consoleStore.update((current) => ({
-      ...current,
-      manualOpportunities: [item, ...current.manualOpportunities],
-    }));
-    toast.success("Added to Intake", {
-      description: "Nothing is live until it reaches the Approved column.",
-    });
-    onClose();
+    createOpportunity.mutate(
+      {
+        title: form.title,
+        funder: form.funder,
+        state: form.state,
+        sourceType: form.sourceType,
+        sourceUrl: form.sourceUrl,
+        geography: form.geography,
+        programType: form.programType,
+        details: form.pastedDetails,
+      },
+      { onSuccess: onClose },
+    );
   };
 
   return (
@@ -346,7 +146,8 @@ function QuickAddForm({ onClose }: { onClose: () => void }) {
         <div>
           <CardTitle className="text-base">Add opportunity manually</CardTitle>
           <p className="mt-1 text-xs text-muted-foreground">
-            Paste whatever you copied — it enters the board in Intake.
+            Paste whatever you copied — it enters the board in Intake and can be run through AI
+            extraction like a call.
           </p>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close form">
@@ -356,38 +157,83 @@ function QuickAddForm({ onClose }: { onClose: () => void }) {
       <CardContent className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="m-title">Opportunity title</Label>
-          <Input id="m-title" value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Neighborhood Housing Catalyst Grant" />
+          <Input
+            id="m-title"
+            value={form.title}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="Neighborhood Housing Catalyst Grant"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="m-funder">Funder / organization</Label>
-          <Input id="m-funder" value={form.funder} onChange={(e) => set("funder", e.target.value)} placeholder="Tulsa Community Foundation" />
+          <Input
+            id="m-funder"
+            value={form.funder}
+            onChange={(e) => set("funder", e.target.value)}
+            placeholder="Tulsa Community Foundation"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="m-url">Source URL</Label>
-          <Input id="m-url" value={form.sourceUrl} onChange={(e) => set("sourceUrl", e.target.value)} placeholder="https://…" />
+          <Input
+            id="m-url"
+            value={form.sourceUrl}
+            onChange={(e) => set("sourceUrl", e.target.value)}
+            placeholder="https://…"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="m-geo">Jurisdiction / geography served</Label>
-          <Input id="m-geo" value={form.geography} onChange={(e) => set("geography", e.target.value)} placeholder="Tulsa County, OK" />
+          <Input
+            id="m-geo"
+            value={form.geography}
+            onChange={(e) => set("geography", e.target.value)}
+            placeholder="Tulsa County, OK"
+          />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="m-type">Program type</Label>
-          <Input id="m-type" value={form.programType} onChange={(e) => set("programType", e.target.value)} placeholder="Predevelopment grant" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="m-source">Source type</Label>
-          <Select value={form.sourceType} onValueChange={(v) => set("sourceType", v as ManualSourceType)}>
-            <SelectTrigger id="m-source">
+          <Label htmlFor="m-state">State tag</Label>
+          <Select value={form.state} onValueChange={(v) => set("state", v as KnowledgeState)}>
+            <SelectTrigger id="m-state">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {sourceTypes.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
+              {KNOWLEDGE_STATES.map((code) => (
+                <SelectItem key={code} value={code}>
+                  {stateLabel(code)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="m-type">Program type</Label>
+            <Input
+              id="m-type"
+              value={form.programType}
+              onChange={(e) => set("programType", e.target.value)}
+              placeholder="Predevelopment grant"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="m-source">Source type</Label>
+            <Select
+              value={form.sourceType}
+              onValueChange={(v) => set("sourceType", v as ManualSourceType)}
+            >
+              <SelectTrigger id="m-source">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {sourceTypes.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="space-y-1.5 md:col-span-2">
           <Label htmlFor="m-details">Paste details here</Label>
@@ -395,7 +241,7 @@ function QuickAddForm({ onClose }: { onClose: () => void }) {
             id="m-details"
             value={form.pastedDetails}
             onChange={(e) => set("pastedDetails", e.target.value)}
-            rows={8}
+            rows={6}
             placeholder="Paste the post, email, or webpage text — deadlines, amounts, eligibility, contacts."
           />
         </div>
@@ -403,8 +249,8 @@ function QuickAddForm({ onClose }: { onClose: () => void }) {
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={save} disabled={!canSave}>
-            Add to Intake
+          <Button onClick={save} disabled={!canSave || createOpportunity.isPending}>
+            {createOpportunity.isPending ? "Saving…" : "Add to Intake"}
           </Button>
         </div>
       </CardContent>
@@ -414,19 +260,104 @@ function QuickAddForm({ onClose }: { onClose: () => void }) {
 
 /* ------------------------------ review item card -------------------------- */
 
-const groups: { category: ExtractionCategory; title: string; blurb: string; icon: typeof Landmark }[] = [
-  { category: "program", title: "Programs discussed", blurb: "Funding programs named on the call, with terms as stated.", icon: Landmark },
-  { category: "note", title: "Practitioner notes", blurb: "Expert knowledge that isn't written in any document.", icon: MessageSquareQuote },
-  { category: "contact", title: "Contacts mentioned", blurb: "People named on the call and how to reach them.", icon: User },
-  { category: "question", title: "Open questions", blurb: "Things the call did not resolve.", icon: ShieldCheck },
+const groups: {
+  category: ExtractionCategory;
+  title: string;
+  blurb: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  {
+    category: "pain_point",
+    title: "Pain points & deal blockers",
+    blurb: "Capital gaps, zoning constraints, and obstacles identified on the call.",
+    icon: AlertCircle,
+  },
+  {
+    category: "required_info",
+    title: "Required project info",
+    blurb: "Parcel details, unit counts, AMI targets, and timelines.",
+    icon: Building2,
+  },
+  {
+    category: "missing_document",
+    title: "Missing document checklist",
+    blurb: "Paperwork to collect from the client before closing.",
+    icon: FileText,
+  },
+  {
+    category: "next_step",
+    title: "Next steps & action items",
+    blurb: "Milestones and preparations before the next meeting or proposal.",
+    icon: ShieldCheck,
+  },
+  {
+    category: "state_subsidy",
+    title: "State & federal subsidies",
+    blurb: "Approved items become practitioner notes on the linked Knowledge Base program.",
+    icon: Landmark,
+  },
 ];
 
-const routingHints: Record<RoutingLevel, string> = {
+const routingHints: Record<ExtractionRow["routing"], string> = {
   "program-level": "Applies to every future project in this jurisdiction",
   "site-level": "Applies to this parcel only",
 };
 
-function ItemCard({ item }: { item: ExtractionItem }) {
+type ExtractionPatch = Partial<Pick<ExtractionRow, "status" | "body" | "routing">>;
+
+function ProgramLinkSelect({
+  item,
+  value,
+  programs,
+  state,
+  onChange,
+  disabled,
+}: {
+  item: ExtractionRow;
+  value: string;
+  programs: ProgramRow[];
+  state: string | null;
+  onChange: (value: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="mt-3 space-y-1">
+      <Label htmlFor={`link-${item.id}`} className="text-xs text-muted-foreground">
+        Knowledge Base program
+      </Label>
+      <Select value={value} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger id={`link-${item.id}`} className="h-8 text-xs">
+          <SelectValue placeholder="Choose a program…" />
+        </SelectTrigger>
+        <SelectContent>
+          {programs.map((p) => (
+            <SelectItem key={p.id} value={p.id}>
+              {p.name} · {p.state}
+            </SelectItem>
+          ))}
+          {state && (
+            <>
+              {programs.length > 0 && <SelectSeparator />}
+              <SelectItem value={NEW_PROGRAM}>+ New {state} program from this item</SelectItem>
+            </>
+          )}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function ItemCard({
+  item,
+  onUpdate,
+  readOnly,
+  programLink,
+}: {
+  item: ExtractionRow;
+  onUpdate: (id: string, patch: ExtractionPatch) => void;
+  readOnly: boolean;
+  programLink?: React.ReactNode;
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.body);
 
@@ -442,9 +373,12 @@ function ItemCard({ item }: { item: ExtractionItem }) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="text-sm font-semibold text-foreground">{item.title}</p>
         <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-            item.confidence === "High" ? "bg-primary/10 text-primary" : "bg-warning/15 text-warning-foreground"
-          }`}
+          className={cn(
+            "rounded-full px-2 py-0.5 text-xs font-medium",
+            item.confidence === "High"
+              ? "bg-primary/10 text-primary"
+              : "bg-warning/15 text-warning-foreground",
+          )}
         >
           {item.confidence} confidence
         </span>
@@ -456,8 +390,9 @@ function ItemCard({ item }: { item: ExtractionItem }) {
           <div className="flex gap-2">
             <Button
               size="sm"
+              disabled={!draft.trim()}
               onClick={() => {
-                updateItem(item.id, { body: draft });
+                onUpdate(item.id, { body: draft.trim() });
                 setEditing(false);
               }}
             >
@@ -479,10 +414,10 @@ function ItemCard({ item }: { item: ExtractionItem }) {
         <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{item.body}</p>
       )}
 
-      {item.facts && item.facts.length > 0 && (
+      {item.facts.length > 0 && (
         <ul className="mt-2.5 space-y-1">
-          {item.facts.map((fact) => (
-            <li key={fact} className="flex gap-2 text-sm leading-6 text-foreground">
+          {item.facts.map((fact, idx) => (
+            <li key={idx} className="flex gap-2 text-sm leading-6 text-foreground">
               <span className="mt-2.5 size-1 shrink-0 rounded-full bg-primary" aria-hidden="true" />
               {fact}
             </li>
@@ -490,10 +425,21 @@ function ItemCard({ item }: { item: ExtractionItem }) {
         </ul>
       )}
 
+      {programLink}
+
       <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
         <div className="flex items-center gap-2">
-          <Select value={item.routing} onValueChange={(value) => updateItem(item.id, { routing: value as RoutingLevel })}>
-            <SelectTrigger className="h-8 w-[150px] text-xs" aria-label={`Routing for ${item.title}`}>
+          <Select
+            value={item.routing}
+            onValueChange={(value) =>
+              onUpdate(item.id, { routing: value as ExtractionRow["routing"] })
+            }
+            disabled={readOnly}
+          >
+            <SelectTrigger
+              className="h-8 w-[150px] text-xs"
+              aria-label={`Routing for ${item.title}`}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -501,28 +447,60 @@ function ItemCard({ item }: { item: ExtractionItem }) {
               <SelectItem value="site-level">Site-level</SelectItem>
             </SelectContent>
           </Select>
-          <span className="hidden text-xs text-muted-foreground 2xl:inline">{routingHints[item.routing]}</span>
+          <span className="hidden text-xs text-muted-foreground 2xl:inline">
+            {routingHints[item.routing]}
+          </span>
         </div>
 
-        {item.status === "pending" ? (
+        {readOnly ? (
+          <span
+            className={cn(
+              "text-xs font-medium",
+              item.status === "approved" ? "text-primary" : "text-muted-foreground",
+            )}
+          >
+            {item.status === "approved"
+              ? "Approved"
+              : item.status === "rejected"
+                ? "Rejected"
+                : "Not approved"}
+          </span>
+        ) : item.status === "pending" ? (
           <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="outline" onClick={() => updateItem(item.id, { status: "approved" })}>
-              <Check aria-hidden="true" /> Approve
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onUpdate(item.id, { status: "approved" })}
+            >
+              <Check className="mr-1 size-3.5" aria-hidden="true" /> Approve
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-              <Pencil aria-hidden="true" /> Edit
+              <Pencil className="mr-1 size-3.5" aria-hidden="true" /> Edit
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => updateItem(item.id, { status: "rejected" })}>
-              <X aria-hidden="true" /> Reject
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onUpdate(item.id, { status: "rejected" })}
+            >
+              <X className="mr-1 size-3.5" aria-hidden="true" /> Reject
             </Button>
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-medium ${item.status === "approved" ? "text-primary" : "text-destructive"}`}>
+            <span
+              className={cn(
+                "text-xs font-medium",
+                item.status === "approved" ? "text-primary" : "text-destructive",
+              )}
+            >
               {item.status === "approved" ? "Approved" : "Rejected"}
             </span>
-            <Button size="sm" variant="ghost" onClick={() => updateItem(item.id, { status: "pending" })}>
-              <Undo2 aria-hidden="true" /> Undo
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onUpdate(item.id, { status: "pending" })}
+            >
+              <Undo2 className="mr-1 size-3.5" aria-hidden="true" /> Undo
             </Button>
           </div>
         )}
@@ -531,9 +509,9 @@ function ItemCard({ item }: { item: ExtractionItem }) {
   );
 }
 
-/* --------------------------------- board ---------------------------------- */
+/* --------------------------------- board card ---------------------------------- */
 
-const agencyIcons: Record<FundingOpportunity["agency"], typeof Landmark> = {
+const agencyIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   HUD: Landmark,
   USDA: Leaf,
   EPA: Building2,
@@ -552,7 +530,7 @@ function BoardCard({
   active: boolean;
   onClick: () => void;
   onDragStart: () => void;
-  tag: "Transcript" | "Opportunity";
+  tag: string;
   subTag: string;
   title: string;
   meta: string;
@@ -574,7 +552,9 @@ function BoardCard({
           variant="outline"
           className={cn(
             "whitespace-nowrap text-[10px] uppercase tracking-wide",
-            tag === "Transcript" ? "border-primary/30 bg-primary/10 text-primary" : "border-info/30 bg-info/15 text-info-foreground",
+            tag.startsWith("Transcript")
+              ? "border-primary/30 bg-primary/10 text-primary"
+              : "border-info/30 bg-info/15 text-info-foreground",
           )}
         >
           {tag}
@@ -588,51 +568,175 @@ function BoardCard({
   );
 }
 
+function TranscriptCardFooter({ transcript }: { transcript: TranscriptWithExtractions }) {
+  if (transcript.status === "extracting") {
+    return (
+      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-primary">
+        <Loader2 className="size-3 animate-spin" aria-hidden="true" /> Extracting…
+      </p>
+    );
+  }
+  const count = transcript.extractions.length;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1">
+      <span
+        className={cn(
+          "rounded-full border px-2 py-0.5 text-[11px]",
+          count > 0 ? "bg-primary/5 text-primary" : "bg-background text-muted-foreground",
+        )}
+      >
+        {count > 0 ? `${count} extractions` : "Not extracted yet"}
+      </span>
+      {transcript.programs.slice(0, 2).map((p) => (
+        <span
+          key={p}
+          className="rounded-full border bg-background px-2 py-0.5 text-[11px] text-muted-foreground"
+        >
+          {p}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function StatusDot({
+  tone,
+  children,
+}: {
+  tone: "ok" | "warn" | "error";
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="flex items-center gap-1.5 font-medium">
+      <span
+        className={cn(
+          "size-2 rounded-full",
+          tone === "ok" ? "bg-primary" : tone === "warn" ? "bg-warning" : "bg-destructive",
+        )}
+        aria-hidden="true"
+      />
+      {children}
+    </span>
+  );
+}
+
+/* ---------------------------------- main page ---------------------------------- */
+
 function PipelinePage() {
   const data = useConsoleData();
-  const [selected, setSelected] = useState<CardRef | null>({ kind: "transcript", id: "transcript-1" });
-  const [showForm, setShowForm] = useState(false);
+
+  const transcriptsQuery = useTranscripts();
+  const liveTranscripts = transcriptsQuery.data ?? [];
+  const { data: clients = [] } = useClients();
+  const { data: programs = [] } = usePrograms();
+  const { data: integration } = useIntegrationStatus();
+  const updateTranscriptStage = useUpdateTranscriptStage();
+  const approveTranscript = useApproveTranscript();
+  const updateExtraction = useUpdateExtraction();
+  const runExtraction = useRunExtraction();
+
+  const [selected, setSelected] = useState<CardRef | null>(null);
+  const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
   const [dragging, setDragging] = useState<CardRef | null>(null);
   const [dragOver, setDragOver] = useState<PipelineStage | null>(null);
+  const [programLinks, setProgramLinks] = useState<Record<string, string>>({});
 
-  const opportunities = data.opportunities.filter((o) => o.status !== "added" && o.status !== "dismissed");
-  const manuals = data.manualOpportunities.filter((m) => m.status === "pending");
+  // Grants.gov feed is still sample data until a live feed is connected.
+  const opportunities = data.opportunities.filter(
+    (o) => o.status !== "added" && o.status !== "dismissed",
+  );
 
-  const isSelected = (ref: CardRef) => selected?.kind === ref.kind && selected.id === ref.id;
+  const firstTranscript = liveTranscripts[0];
+  const effective: CardRef | null =
+    selected ?? (firstTranscript ? { kind: "transcript", id: firstTranscript.id } : null);
+  const isSelected = (ref: CardRef) => effective?.kind === ref.kind && effective.id === ref.id;
+
+  const selectedTranscript =
+    effective?.kind === "transcript"
+      ? (liveTranscripts.find((t) => t.id === effective.id) ?? null)
+      : null;
+  const selectedOpportunity =
+    effective?.kind === "opportunity"
+      ? (data.opportunities.find((o) => o.id === effective.id) ?? null)
+      : null;
+
+  const selectedClient = selectedTranscript?.client_id
+    ? clients.find((c) => c.id === selectedTranscript.client_id)
+    : undefined;
+  const selectedState = selectedTranscript
+    ? (selectedClient?.state ?? stateFromLabel(selectedTranscript.project_label))
+    : null;
+  const linkablePrograms = candidatePrograms(programs, selectedState);
+
+  const items = selectedTranscript?.extractions ?? [];
+  const approvedItems = items.filter((i) => i.status === "approved");
+  const isApproved = selectedTranscript?.status === "approved";
+
+  const linkFor = (item: ExtractionRow) => {
+    const chosen = programLinks[item.id];
+    if (chosen) return chosen;
+    const match = matchProgram(item.title, linkablePrograms);
+    if (match) return match.id;
+    return selectedState ? NEW_PROGRAM : "";
+  };
 
   const drop = (stage: PipelineStage) => {
     const ref = dragging;
     setDragging(null);
     setDragOver(null);
     if (!ref) return;
-    if (ref.kind === "transcript") {
-      const t = data.transcripts.find((x) => x.id === ref.id);
-      if (t) setTranscriptStage(t, stage);
-      return;
-    }
+
     if (ref.kind === "opportunity") {
-      const opp = data.opportunities.find((o) => o.id === ref.id);
-      if (!opp) return;
-      if (stage === "intake") setOpportunityStatus(opp.id, "new");
-      else if (stage === "extracted") setOpportunityStatus(opp.id, "reviewed");
-      else addToCorpus(opp);
+      const status = stage === "intake" ? "new" : stage === "extracted" ? "reviewed" : null;
+      if (!status) {
+        toast.info("Sample Grants.gov listings can only move between Intake and Extracted.");
+        return;
+      }
+      consoleStore.update((c) => ({
+        ...c,
+        opportunities: c.opportunities.map((o) => (o.id === ref.id ? { ...o, status } : o)),
+      }));
       return;
     }
-    const manual = data.manualOpportunities.find((m) => m.id === ref.id);
-    if (manual && stage !== "intake") sendManualToReview(manual);
+
+    const transcript = liveTranscripts.find((t) => t.id === ref.id);
+    if (!transcript || transcriptStage(transcript) === stage) return;
+    if (transcript.status === "approved") {
+      toast.info("Approved transcripts stay in Approved.");
+      return;
+    }
+    if (stage === "approved") {
+      setSelected(ref);
+      toast.info("Approve from the side panel", {
+        description: "Review the items, then click Approve to send them to the Knowledge Base.",
+      });
+      return;
+    }
+    if (stage === "extracted" && transcript.extractions.length === 0) {
+      setSelected(ref);
+      runExtraction.mutate(transcript.id);
+      return;
+    }
+    updateTranscriptStage.mutate({ id: transcript.id, stage });
   };
 
-  const selectedTranscript =
-    selected?.kind === "transcript" ? data.transcripts.find((t) => t.id === selected.id) ?? null : null;
-  const selectedOpportunity =
-    selected?.kind === "opportunity" ? data.opportunities.find((o) => o.id === selected.id) ?? null : null;
-  const selectedManual =
-    selected?.kind === "manual" ? data.manualOpportunities.find((m) => m.id === selected.id) ?? null : null;
+  const handleApprove = () => {
+    if (!selectedTranscript) return;
+    const links: Record<string, string> = {};
+    for (const item of approvedItems) {
+      if (item.category !== "state_subsidy") continue;
+      const link = linkFor(item);
+      if (!link) {
+        toast.error(`Choose a Knowledge Base program for "${item.title}"`);
+        return;
+      }
+      links[item.id] = link;
+    }
+    approveTranscript.mutate({ transcriptId: selectedTranscript.id, programLinks: links });
+  };
 
-  const selectedItems = selectedTranscript
-    ? data.extractions.filter((e) => e.transcriptId === selectedTranscript.id)
-    : [];
-  const approvedCount = selectedItems.filter((i) => i.status === "approved").length;
+  const aiTone = integration?.gemini ? "ok" : "warn";
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] w-full flex-col xl:flex-row">
@@ -641,71 +745,75 @@ function PipelinePage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">Workspace</p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Pipeline</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Call transcripts and funding opportunities move through the same four stages. Drag a card between
-            columns, or open it to review what was extracted.
+            Ingest call transcripts from Granola or Zoom and review AI extractions across the 5
+            canonical buckets. Drag cards between stages, or open them to review details.
           </p>
         </div>
 
         <div className="mt-5 flex items-start gap-3 border border-primary/30 bg-primary/5 px-4 py-3">
           <Lock className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
           <p className="text-xs leading-5 text-foreground">
-            <span className="font-medium">Approval gate active.</span> Nothing reaches the Knowledge Base until its
-            card lands in <span className="font-medium">Approved</span>.
+            <span className="font-medium">Approval gate active.</span> Nothing reaches the public
+            chatbot at <span className="font-medium underline">ourcollectiveimpact.com</span> until
+            its card lands in <span className="font-medium">Approved</span>.
           </p>
         </div>
 
-        {/* Connected sources */}
-        <div className="mt-5 grid gap-3 lg:grid-cols-2">
-          <div className="flex flex-wrap items-center gap-3 border bg-card px-4 py-3">
-            <span className="grid size-8 place-items-center rounded-md bg-primary/10 text-xs font-bold text-primary">G</span>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">Granola — call transcripts</p>
-              <p className="text-xs text-muted-foreground">Last synced 2 hours ago</p>
-            </div>
-            <span className="ml-auto flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <span className="size-2 rounded-full bg-emerald-500" aria-hidden="true" /> Connected
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 border bg-card px-4 py-3">
-            <span className="grid size-8 place-items-center rounded-md bg-primary/10 text-primary">
-              <Landmark className="size-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">Grants.gov — federal opportunities</p>
-              <p className="text-xs text-muted-foreground">Auto-syncs new opportunities</p>
-            </div>
-            <span className="ml-auto flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <span className="size-2 rounded-full bg-emerald-500" aria-hidden="true" /> Connected
-            </span>
-            <Button size="sm" onClick={() => setShowForm(true)}>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border bg-card p-3.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => setShowMeetingForm(true)} className="gap-2">
+              <Plus className="size-4" /> Ingest meeting transcript
+            </Button>
+            <Button variant="outline" onClick={() => setShowManualForm(true)} className="gap-2">
               <Plus className="size-4" /> Add opportunity manually
             </Button>
           </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            <StatusDot tone="ok">Granola / Zoom paste-in</StatusDot>
+            <StatusDot tone={aiTone}>
+              {integration?.gemini
+                ? `AI extraction ready (${integration.geminiModel})`
+                : "AI extraction: waiting for Gemini key"}
+            </StatusDot>
+            <StatusDot tone={transcriptsQuery.isError ? "error" : "ok"}>
+              {transcriptsQuery.isError ? "Supabase unreachable" : "Supabase connected"}
+            </StatusDot>
+          </div>
         </div>
 
-        <div className="mt-3 flex items-start gap-3 border border-primary/25 bg-primary/5 px-4 py-2.5">
-          <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-          <p className="text-xs text-foreground/80">
-            Hyperlocal and philanthropic funding lives in posts, emails, and foundation pages — no feed publishes
-            it, so no competitor can scrape it. Manually added items enter the board in Intake.
-          </p>
-        </div>
-
-        {showForm && (
-          <div className="mt-4">
-            <QuickAddForm onClose={() => setShowForm(false)} />
+        {transcriptsQuery.isError && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border border-destructive/40 bg-destructive/5 px-4 py-3 text-xs text-foreground">
+            <span>{(transcriptsQuery.error as Error).message}</span>
+            <Button size="sm" variant="outline" onClick={() => transcriptsQuery.refetch()}>
+              Retry
+            </Button>
           </div>
         )}
 
-        {/* Board */}
+        {showMeetingForm && (
+          <div className="mt-4">
+            <MeetingIntakeForm onClose={() => setShowMeetingForm(false)} />
+          </div>
+        )}
+
+        {showManualForm && (
+          <div className="mt-4">
+            <QuickAddForm onClose={() => setShowManualForm(false)} />
+          </div>
+        )}
+
         <div className="mt-6 grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
           {stages.map((stage) => {
-            const stageTranscripts = data.transcripts.filter((t) => transcriptStage(t) === stage.id);
+            const stageTranscripts = liveTranscripts.filter((t) => transcriptStage(t) === stage.id);
             const stageOpps = opportunities.filter((o) =>
-              stage.id === "intake" ? o.status === "new" : stage.id === "extracted" ? o.status === "reviewed" : false,
+              stage.id === "intake"
+                ? o.status === "new"
+                : stage.id === "extracted"
+                  ? o.status === "reviewed"
+                  : false,
             );
-            const stageManuals = stage.id === "intake" ? manuals : [];
-            const count = stageTranscripts.length + stageOpps.length + stageManuals.length;
+            const count = stageTranscripts.length + stageOpps.length;
 
             return (
               <div
@@ -728,29 +836,29 @@ function PipelinePage() {
                 <p className="mt-0.5 text-xs text-muted-foreground">{stage.blurb}</p>
 
                 <div className="mt-3 space-y-2">
-                  {stageTranscripts.map((t) => (
-                    <BoardCard
-                      key={t.id}
-                      active={isSelected({ kind: "transcript", id: t.id })}
-                      onClick={() => setSelected({ kind: "transcript", id: t.id })}
-                      onDragStart={() => setDragging({ kind: "transcript", id: t.id })}
-                      tag="Transcript"
-                      subTag={`Granola · ${t.callDate}`}
-                      title={t.organization}
-                      meta={t.projectLabel}
-                      footer={
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {t.programs.slice(0, 2).map((p) => (
-                            <span key={p} className="rounded-full border bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
-                              {p}
-                            </span>
-                          ))}
-                        </div>
-                      }
-                    />
-                  ))}
+                  {stageTranscripts.map((t) => {
+                    const isOpportunity = t.meeting_type === "funding_feed";
+                    return (
+                      <BoardCard
+                        key={t.id}
+                        active={isSelected({ kind: "transcript", id: t.id })}
+                        onClick={() => setSelected({ kind: "transcript", id: t.id })}
+                        onDragStart={() => setDragging({ kind: "transcript", id: t.id })}
+                        tag={
+                          isOpportunity
+                            ? "Opportunity"
+                            : `Transcript · ${meetingLabel(t.meeting_type)}`
+                        }
+                        subTag={`${t.source} · ${t.call_date}`}
+                        title={isOpportunity ? t.project_label : t.organization}
+                        meta={isOpportunity ? t.organization : t.project_label}
+                        footer={<TranscriptCardFooter transcript={t} />}
+                      />
+                    );
+                  })}
+
                   {stageOpps.map((o) => {
-                    const Icon = agencyIcons[o.agency];
+                    const Icon = agencyIcons[o.agency] || Landmark;
                     return (
                       <BoardCard
                         key={o.id}
@@ -758,7 +866,7 @@ function PipelinePage() {
                         onClick={() => setSelected({ kind: "opportunity", id: o.id })}
                         onDragStart={() => setDragging({ kind: "opportunity", id: o.id })}
                         tag="Opportunity"
-                        subTag={`Grants.gov · ${o.agency}`}
+                        subTag={`Grants.gov sample · ${o.agency}`}
                         title={o.title}
                         meta={`Posted ${o.postedDate} · Closes ${o.closeDate}`}
                         footer={
@@ -769,21 +877,10 @@ function PipelinePage() {
                       />
                     );
                   })}
-                  {stageManuals.map((m) => (
-                    <BoardCard
-                      key={m.id}
-                      active={isSelected({ kind: "manual", id: m.id })}
-                      onClick={() => setSelected({ kind: "manual", id: m.id })}
-                      onDragStart={() => setDragging({ kind: "manual", id: m.id })}
-                      tag="Opportunity"
-                      subTag={`${m.sourceType} · ${m.addedOn}`}
-                      title={m.title}
-                      meta={`${m.funder} · ${m.geography}`}
-                    />
-                  ))}
+
                   {count === 0 && (
                     <p className="border border-dashed bg-background/50 px-3 py-6 text-center text-xs text-muted-foreground">
-                      Nothing here yet
+                      {transcriptsQuery.isLoading ? "Loading…" : "Nothing here yet"}
                     </p>
                   )}
                 </div>
@@ -793,64 +890,143 @@ function PipelinePage() {
         </div>
       </div>
 
-      {/* Detail panel */}
-      {(selectedTranscript || selectedOpportunity || selectedManual) && (
-        <aside className="w-full shrink-0 border-t bg-card xl:w-[460px] xl:border-l xl:border-t-0">
+      {(selectedTranscript || selectedOpportunity) && (
+        <aside className="w-full shrink-0 border-t bg-card xl:w-[480px] xl:border-l xl:border-t-0">
           <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto">
             {selectedTranscript && (
               <div className="px-5 py-5">
                 <div className="flex items-start justify-between gap-3 border-b pb-4">
                   <div className="min-w-0">
-                    <h2 className="truncate text-base font-semibold text-foreground">{selectedTranscript.organization}</h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className="border-primary/30 text-[10px] uppercase tracking-wider text-primary"
+                      >
+                        {selectedTranscript.source} ·{" "}
+                        {meetingLabel(selectedTranscript.meeting_type)}
+                      </Badge>
+                      {selectedState && (
+                        <Badge variant="outline" className="text-[10px] tracking-wider">
+                          {selectedState}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {selectedTranscript.call_date}
+                      </span>
+                    </div>
+                    <h2 className="mt-1 truncate text-base font-semibold text-foreground">
+                      {selectedTranscript.organization}
+                    </h2>
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {selectedTranscript.projectLabel} · {selectedTranscript.callDate}
+                      {selectedTranscript.project_label}
                     </p>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Stage: <span className="font-medium text-foreground">{stages.find((s) => s.id === transcriptStage(selectedTranscript))?.label}</span> ·{" "}
-                      {approvedCount} of {selectedItems.length} items approved
+                      Stage:{" "}
+                      <span className="font-medium uppercase tracking-wide text-foreground">
+                        {transcriptStage(selectedTranscript)}
+                      </span>{" "}
+                      · {approvedItems.length} of {items.length} items approved
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setSelected(null)} aria-label="Close detail panel">
-                    <X />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelected(null)}
+                    aria-label="Close detail panel"
+                  >
+                    <X className="size-4" />
                   </Button>
                 </div>
 
                 <div className="mt-4 space-y-7">
                   {groups.map((group) => {
-                    const groupItems = selectedItems.filter((i) => i.category === group.category);
+                    const groupItems = items.filter((i) => i.category === group.category);
                     if (groupItems.length === 0) return null;
                     const Icon = group.icon;
                     return (
                       <section key={group.category}>
                         <div className="flex items-start gap-2.5">
-                          <Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                          <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
                           <div>
                             <h3 className="text-sm font-semibold text-foreground">
-                              {group.title} <span className="font-normal text-muted-foreground">({groupItems.length})</span>
+                              {group.title}{" "}
+                              <span className="font-normal text-muted-foreground">
+                                ({groupItems.length})
+                              </span>
                             </h3>
                             <p className="mt-0.5 text-xs text-muted-foreground">{group.blurb}</p>
                           </div>
                         </div>
                         <div className="mt-3 space-y-2.5">
                           {groupItems.map((item) => (
-                            <ItemCard key={item.id} item={item} />
+                            <ItemCard
+                              key={item.id}
+                              item={item}
+                              readOnly={isApproved}
+                              onUpdate={(id, patch) => updateExtraction.mutate({ id, patch })}
+                              programLink={
+                                item.category === "state_subsidy" &&
+                                !isApproved &&
+                                item.status !== "rejected" ? (
+                                  <ProgramLinkSelect
+                                    item={item}
+                                    value={linkFor(item)}
+                                    programs={linkablePrograms}
+                                    state={selectedState}
+                                    disabled={approveTranscript.isPending}
+                                    onChange={(value) =>
+                                      setProgramLinks((links) => ({ ...links, [item.id]: value }))
+                                    }
+                                  />
+                                ) : undefined
+                              }
+                            />
                           ))}
                         </div>
                       </section>
                     );
                   })}
 
-                  {selectedItems.length === 0 && (
+                  {items.length === 0 && (
                     <div className="border border-dashed bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
-                      Nothing extracted yet. Raw transcript below.
+                      {selectedTranscript.status === "extracting" ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2
+                            className="size-4 animate-spin text-primary"
+                            aria-hidden="true"
+                          />
+                          AI is reading the transcript…
+                        </span>
+                      ) : (
+                        <div className="space-y-3">
+                          <p>Nothing extracted yet. The raw transcript is below.</p>
+                          <Button
+                            size="sm"
+                            className="gap-1.5"
+                            disabled={!integration?.gemini || runExtraction.isPending}
+                            onClick={() => runExtraction.mutate(selectedTranscript.id)}
+                          >
+                            <Sparkles className="size-3.5" aria-hidden="true" /> Run AI extraction
+                          </Button>
+                          {!integration?.gemini && (
+                            <p className="text-xs">
+                              Waiting for the Gemini API key — add{" "}
+                              <code className="font-mono">GEMINI_API_KEY</code> to the server
+                              environment to enable this.
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
                   <section>
-                    <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Raw transcript</h3>
-                    <div className="mt-2 space-y-3">
-                      {selectedTranscript.rawText.split("\n\n").map((p, i) => (
-                        <p key={i} className="text-sm leading-6 text-foreground/90">
+                    <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      Raw transcript
+                    </h3>
+                    <div className="mt-2 space-y-3 rounded-md bg-muted/20 p-3 font-mono text-xs leading-relaxed text-foreground/90">
+                      {selectedTranscript.raw_text.split("\n\n").map((p, i) => (
+                        <p key={i} className="whitespace-pre-line">
                           {p}
                         </p>
                       ))}
@@ -860,30 +1036,25 @@ function PipelinePage() {
 
                 <div className="sticky bottom-0 mt-6 flex flex-wrap items-center justify-between gap-3 border-t bg-card/95 py-3 backdrop-blur">
                   <p className="text-xs text-muted-foreground">
-                    {selectedTranscript.status === "approved"
+                    {isApproved
                       ? "Approved into the Knowledge Base."
-                      : "Rejected and pending items are not sent."}
+                      : "Only approved items leave the pipeline."}
                   </p>
-                  {selectedTranscript.status === "approved" ? (
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-2 text-sm font-medium text-primary">
-                        <CircleCheck className="size-4" aria-hidden="true" /> Approved
-                      </span>
-                      <Button variant="outline" size="sm" onClick={() => setTranscriptStage(selectedTranscript, "in-review")}>
-                        Reopen
-                      </Button>
-                    </div>
+                  {isApproved ? (
+                    <span className="flex items-center gap-2 text-sm font-medium text-primary">
+                      <CircleCheck className="size-4" aria-hidden="true" /> Approved
+                    </span>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      {transcriptStage(selectedTranscript) !== "in-review" && (
-                        <Button variant="outline" size="sm" onClick={() => setTranscriptStage(selectedTranscript, "in-review")}>
-                          Move to In Review
-                        </Button>
-                      )}
-                      <Button size="sm" disabled={approvedCount === 0} onClick={() => approveTranscript(selectedTranscript)}>
-                        <Check aria-hidden="true" /> Approve {approvedCount} items
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      disabled={approvedItems.length === 0 || approveTranscript.isPending}
+                      onClick={handleApprove}
+                    >
+                      <Check className="mr-1 size-3.5" aria-hidden="true" />
+                      {approveTranscript.isPending
+                        ? "Approving…"
+                        : `Approve ${approvedItems.length} items`}
+                    </Button>
                   )}
                 </div>
               </div>
@@ -893,13 +1064,24 @@ function PipelinePage() {
               <div className="px-5 py-5">
                 <div className="flex items-start justify-between gap-3 border-b pb-4">
                   <div className="min-w-0">
-                    <h2 className="text-base font-semibold leading-snug text-foreground">{selectedOpportunity.title}</h2>
+                    <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                      Grants.gov sample data
+                    </Badge>
+                    <h2 className="mt-2 text-base font-semibold leading-snug text-foreground">
+                      {selectedOpportunity.title}
+                    </h2>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {selectedOpportunity.agency} · Assistance Listing {selectedOpportunity.assistanceListing}
+                      {selectedOpportunity.agency} · Assistance Listing{" "}
+                      {selectedOpportunity.assistanceListing}
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setSelected(null)} aria-label="Close detail panel">
-                    <X />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelected(null)}
+                    aria-label="Close detail panel"
+                  >
+                    <X className="size-4" />
                   </Button>
                 </div>
                 <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -916,85 +1098,9 @@ function PipelinePage() {
                     <dd className="font-medium">{selectedOpportunity.awardCeiling}</dd>
                   </div>
                 </dl>
-                <p className="mt-4 text-sm leading-relaxed text-foreground/90">{selectedOpportunity.summary}</p>
-                <p className="mt-4 border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                  Adding to corpus moves this card to In Review — it reaches the Knowledge Base only once you
-                  approve it.
+                <p className="mt-4 text-sm leading-relaxed text-foreground/90">
+                  {selectedOpportunity.summary}
                 </p>
-                <div className="mt-4 flex gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      addToCorpus(selectedOpportunity);
-                      setSelected({ kind: "transcript", id: `transcript-opp-${selectedOpportunity.id}` });
-                    }}
-                  >
-                    <Plus className="size-4" /> Add to corpus
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setOpportunityStatus(selectedOpportunity.id, "dismissed");
-                      setSelected(null);
-                    }}
-                  >
-                    Dismiss
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {selectedManual && (
-              <div className="px-5 py-5">
-                <div className="flex items-start justify-between gap-3 border-b pb-4">
-                  <div className="min-w-0">
-                    <h2 className="text-base font-semibold leading-snug text-foreground">{selectedManual.title}</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {selectedManual.funder} · {selectedManual.sourceType} · {selectedManual.geography}
-                    </p>
-                  </div>
-                  <Button variant="ghost" size="icon" onClick={() => setSelected(null)} aria-label="Close detail panel">
-                    <X />
-                  </Button>
-                </div>
-                {selectedManual.sourceUrl && (
-                  <a
-                    href={selectedManual.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                  >
-                    <ExternalLink className="size-3" /> Original source
-                  </a>
-                )}
-                <p className="mt-4 whitespace-pre-line text-sm leading-6 text-foreground/90">
-                  {selectedManual.pastedDetails}
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      sendManualToReview(selectedManual);
-                      setSelected({ kind: "transcript", id: `transcript-manual-${selectedManual.id}` });
-                    }}
-                  >
-                    <Plus className="size-4" /> Add to corpus
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      consoleStore.update((current) => ({
-                        ...current,
-                        manualOpportunities: current.manualOpportunities.map((m) =>
-                          m.id === selectedManual.id ? { ...m, status: "dismissed" as const } : m,
-                        ),
-                      }));
-                      setSelected(null);
-                    }}
-                  >
-                    Dismiss
-                  </Button>
-                </div>
               </div>
             )}
           </div>

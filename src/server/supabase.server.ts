@@ -1,0 +1,43 @@
+import { createClient, type PostgrestError, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
+
+let client: SupabaseClient<Database> | null = null;
+
+export function hasSecretKey() {
+  return Boolean(process.env["SUPABASE_SECRET_KEY"]);
+}
+
+/**
+ * Supabase client for server functions only. It uses the secret key so console
+ * writes keep working once public (anon) access is locked down by
+ * supabase_step2_security.sql. Until SUPABASE_SECRET_KEY is set it falls back to
+ * the publishable key, which only works while the step-1 open policies exist.
+ */
+export function getServerSupabase(): SupabaseClient<Database> {
+  if (client) return client;
+
+  const url = import.meta.env["VITE_SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"];
+  const key =
+    process.env["SUPABASE_SECRET_KEY"] ??
+    import.meta.env["VITE_SUPABASE_ANON_KEY"] ??
+    process.env["VITE_SUPABASE_ANON_KEY"];
+
+  if (!url || !key) {
+    throw new Error("Supabase is not configured. Set VITE_SUPABASE_URL and SUPABASE_SECRET_KEY.");
+  }
+
+  client = createClient<Database>(url as string, key as string, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  return client;
+}
+
+/** Turns a PostgREST error into an Error with a message the operator can act on. */
+export function dbError(error: PostgrestError, action: string): Error {
+  const rlsDenied = error.code === "42501" || /row-level security/i.test(error.message);
+  const hint =
+    rlsDenied && !hasSecretKey()
+      ? " Public write access is locked down — set SUPABASE_SECRET_KEY on the server."
+      : "";
+  return new Error(`${action}: ${error.message}.${hint}`);
+}
