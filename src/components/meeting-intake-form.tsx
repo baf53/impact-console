@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { FileUp, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   useRunExtraction,
 } from "@/hooks/use-pipeline";
 import { CLIENT_STATES, stateLabel } from "@/lib/states";
+import { TRANSCRIPT_FILE_ACCEPT, readTranscriptFile } from "@/lib/transcript-files";
 
 type ClientState = (typeof CLIENT_STATES)[number];
 
@@ -44,6 +45,23 @@ export function MeetingIntakeForm({ onClose }: { onClose: () => void }) {
   const [meetingType, setMeetingType] = useState<"meeting_1" | "meeting_2">("meeting_1");
   const [source, setSource] = useState<"Granola" | "Zoom">("Granola");
   const [rawText, setRawText] = useState("");
+  const [loadedFile, setLoadedFile] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const loadFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const text = await readTranscriptFile(file);
+      if (!text) throw new Error("The file has no text in it.");
+      setRawText(text);
+      setLoadedFile(file.name);
+      toast.success("Transcript loaded", { description: file.name });
+    } catch (err) {
+      toast.error("Couldn't read that file", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    }
+  };
 
   const aiReady = status?.gemini ?? false;
   const registeringClient = isNewClient || clients.length === 0;
@@ -242,10 +260,35 @@ export function MeetingIntakeForm({ onClose }: { onClose: () => void }) {
           <div className="space-y-1.5 md:col-span-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="t-raw">Call transcript</Label>
-              <span className="text-xs text-muted-foreground">
-                Raw transcript text from Granola or Zoom
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {loadedFile ? `Loaded from ${loadedFile}` : "Paste text, or upload a file"}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={() => fileInput.current?.click()}
+                >
+                  <FileUp className="size-3.5" aria-hidden="true" /> Upload file
+                </Button>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept={TRANSCRIPT_FILE_ACCEPT}
+                  className="hidden"
+                  aria-label="Upload transcript file"
+                  onChange={(e) => {
+                    void loadFile(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Accepts .txt, .md, .docx, and Zoom .vtt / .srt transcripts.
+            </p>
             <Textarea
               id="t-raw"
               value={rawText}

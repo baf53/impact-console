@@ -60,3 +60,26 @@ If the bucket is made private, use `createSignedUrl(doc.storage_path, 60)` inste
 ## Freshness
 
 Notes are written when the operator approves a transcript in the console's Pipeline. Programs and documents change when they're edited in the Knowledge Base. There's no publish step beyond that, so query at request time or cache briefly.
+
+## Logging answers (optional)
+
+To let Collective Impact review the chatbot's answers in the console's Answer Log, have the chatbot's **server** post each answer after it's sent. The browser must never post directly, because that would expose the secret.
+
+```ts
+await fetch("https://<console-domain>/api/chatbot/answers", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.CHATBOT_LOG_SECRET}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    question,                 // what the visitor asked
+    answer,                   // what the chatbot replied
+    state: userState,         // e.g. "OK"
+    parcel,                   // optional address the visitor asked about
+    citations: [{ title: "Oklahoma Increased Housing Program — program overview" }],
+  }),
+});
+```
+
+The endpoint replies `201` with `{ ok: true, id }`. A wrong or missing secret returns `401`. Logging is write-only and doesn't change the chatbot's read-only database access.

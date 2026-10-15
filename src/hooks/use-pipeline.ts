@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { STAGE_LABELS, type ExtractionRow, type TranscriptWithExtractions } from "@/lib/pipeline";
 import {
   approveTranscriptFn,
+  assignTranscriptFn,
   createOpportunityFn,
   getIntegrationStatusFn,
   ingestTranscriptFn,
@@ -221,5 +222,23 @@ export function useApproveTranscript() {
     },
     onError: (err) =>
       toast.error("Could not approve transcript", { description: errorMessage(err) }),
+  });
+}
+
+export function useAssignTranscript() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: {
+      transcriptId: string;
+      clientId: string;
+      meetingType: "meeting_1" | "meeting_2" | "ad_hoc";
+    }) => assignTranscriptFn({ data: vars }),
+    onSuccess: (transcript) => {
+      queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() });
+      invalidateFeeds(queryClient);
+      toast.success("Transcript assigned", { description: transcript.project_label });
+    },
+    onError: (err) =>
+      toast.error("Could not assign transcript", { description: errorMessage(err) }),
   });
 }

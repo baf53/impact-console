@@ -246,38 +246,8 @@ create policy "allow_anon_documents_storage_update" on storage.objects for updat
 create policy "allow_anon_documents_storage_delete" on storage.objects for delete to anon, authenticated using (bucket_id = 'documents');
 
 -- --------------------------------------------------------------------
--- 11. INITIAL SEED DATA (Oklahoma, Kansas, Florida, Maryland)
+-- 11. NO SEED DATA
 -- --------------------------------------------------------------------
--- Seed Clients
-insert into public.clients (id, client_name, contact_name, organization, email, phone, parcel_address, city, state, deal_stage, target_programs, original_call_date)
-values
-  ('client-bartlesville', 'Bartlesville Housing Trust', 'Marcus Vance', 'Bartlesville Housing Trust', 'm.vance@bartlesvilleht.org', '(918) 555-0142', '316 S Morton Ave', 'Bartlesville', 'OK', 'meeting_2', array['Oklahoma Increased Housing Program (OHFA)', 'CDBG Small Cities'], 'Aug 14, 2026'),
-  ('client-orlando', 'Orlando Community Partners', 'Elena Rostova', 'Orlando Community Partners', 'e.rostova@orlandocp.org', '(407) 555-0199', '1000 N Orange Ave', 'Orlando', 'FL', 'demo_prep', array['Orlando CDBG', 'Florida SHIP', 'Orlando HOME'], 'Sep 3, 2026'),
-  ('client-baltimore', 'Baltimore Urban Housing', 'Andre Washington', 'Baltimore Urban Housing', 'a.washington@bmoreurban.org', '(410) 555-0177', '572 Gold St', 'Baltimore', 'MD', 'proposal', array['Baltimore CDBG / HOME', 'Maryland LIHTC', 'Affordable Housing Trust Fund'], 'Aug 29, 2026')
-on conflict (id) do nothing;
-
--- Seed Knowledge Programs (Feeds the public chatbot at ourcollectiveimpact.com)
-insert into public.knowledge_programs (id, name, state, administrator, level, jurisdiction, cities, coverage, funds, overview, eligibility_criteria)
-values
-  ('ok-increased-housing', 'Oklahoma Increased Housing Program (OHFA)', 'OK', 'Oklahoma Housing Finance Agency', 'State', 'Oklahoma', array['Bartlesville', 'Tulsa', 'Oklahoma City'], 94, '$18.5M allocated for FY2026', 'State-funded incentive for single-family and small multifamily development in designated underserved counties. Offers forgivable construction loans up to $45,000 per unit for projects targeting 80% AMI or below.', 'Must be new construction or substantial rehab. Minimum 4 units. Rent restrictions for 15 years.'),
-  ('fed-cdbg-small-cities', 'CDBG Small Cities', 'Federal', 'HUD / State Commerce Departments', 'Federal', 'Federal (Administered via State)', array['Bartlesville', 'Rural non-entitlement areas'], 88, 'Annual formula allocation ~$13M statewide', 'Community Development Block Grant program for municipalities with under 50,000 population. Funds infrastructure, acquisition, and housing rehabilitation benefiting low- and moderate-income persons.', 'Municipality must apply on behalf of project or sponsor. At least 70% of funds must benefit low/mod-income persons.'),
-  ('ks-moderate-income', 'Kansas Moderate Income Housing (MIH)', 'KS', 'Kansas Housing Resources Corporation (KHRC)', 'State', 'Kansas', array['Wichita', 'Topeka', 'Overland Park', 'Rural Kansas'], 90, '$20M annual legislative appropriation', 'Provides grants and loans to develop housing for moderate-income families in communities with population under 60,000 where housing shortages impede economic development.', 'Projects serving households between 60% and 150% AMI in cities/counties under 60k population.'),
-  ('fl-ship', 'Florida State Housing Initiatives Partnership (SHIP)', 'FL', 'Florida Housing Finance Corporation', 'State', 'Florida', array['Orlando', 'Orange County', 'Tampa', 'Miami'], 92, '$210M statewide trust fund', 'Provides funds to local governments on a population-based formula to produce and preserve affordable homeownership and multifamily housing.', 'Targeting households up to 140% AMI, with at least 65% for homeownership and 75% for construction/rehabilitation.'),
-  ('md-trust-fund', 'Maryland Affordable Housing Trust Fund', 'MD', 'Maryland DHCD', 'State', 'Maryland', array['Baltimore', 'Annapolis', 'Silver Spring'], 89, '$15M available revolving loan & grant fund', 'Promotes affordable housing for households earning under 50% AMI. Routinely used as a soft second loan behind LIHTC or CDBG dollars.', 'Nonprofit developers, municipalities, and housing authorities. Up to $1M per award.')
-on conflict (id) do nothing;
-
--- Seed Practitioner Notes for Chatbot RAG
-insert into public.program_notes (id, program_id, state, text, source_call, call_date)
-values
-  ('note-1', 'ok-increased-housing', 'OK', 'OHFA requires environmental sign-off prior to initial loan closing, not just application submission. Factor 60 days into timeline.', 'Bartlesville Housing Trust call', 'Aug 14, 2026'),
-  ('note-2', 'ok-increased-housing', 'OK', 'OHFA increased the per-unit subsidy ceiling to $45k in the 2026 cycle for non-metropolitan counties.', 'OHFA Q3 agency briefing', 'Sep 2, 2026'),
-  ('note-3', 'ks-moderate-income', 'KS', 'KHRC requires a local government resolution of support before application scoring. Secure City Council resolution 3 weeks ahead.', 'Kansas Housing Developer Forum', 'Aug 10, 2026'),
-  ('note-4', 'md-trust-fund', 'MD', 'Trust Fund soft second is the standard Maryland pattern to bridge the 8-12% mezzanine financing gap on historic rehabs.', 'Baltimore Urban Housing call', 'Aug 29, 2026')
-on conflict (id) do nothing;
-
--- Seed Activity Log
-insert into public.app_activity_log (id, action, subject, detail, occurred_at, status)
-values
-  ('act-1', 'Knowledge Base initialized', 'Oklahoma & Kansas Programs', 'State subsidies loaded for ourcollectiveimpact.com chatbot', 'Just now', 'approved'),
-  ('act-2', 'Client Deal synced', '316 S Morton Ave', 'Bartlesville Housing Trust meeting records ready', 'Just now', 'updated')
-on conflict (id) do nothing;
+-- An earlier version inserted demo clients, programs and notes here. They were
+-- invented examples, not verified program facts, so they were removed: the
+-- Knowledge Base is filled from the console (Add program / approved calls).

@@ -6,7 +6,6 @@ import {
   CircleCheck,
   FileText,
   Landmark,
-  Leaf,
   Loader2,
   Lock,
   Pencil,
@@ -19,6 +18,8 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { AssignTranscript } from "@/components/assign-transcript";
+import { GrantsFeed } from "@/components/grants-feed";
 import { MeetingIntakeForm } from "@/components/meeting-intake-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,6 @@ import {
   useUpdateExtraction,
   useUpdateTranscriptStage,
 } from "@/hooks/use-pipeline";
-import { consoleStore, useConsoleData, type ManualSourceType } from "@/lib/mock-data";
 import {
   NEW_PROGRAM,
   meetingLabel,
@@ -95,7 +95,7 @@ const stages: { id: PipelineStage; label: string; blurb: string }[] = [
   { id: "approved", label: "Approved", blurb: "Sent to the Knowledge Base" },
 ];
 
-type CardRef = { kind: "transcript"; id: string } | { kind: "opportunity"; id: string };
+type CardRef = { kind: "transcript"; id: string };
 
 function transcriptStage(t: TranscriptWithExtractions): PipelineStage {
   return t.status === "approved" ? "approved" : t.stage;
@@ -103,6 +103,7 @@ function transcriptStage(t: TranscriptWithExtractions): PipelineStage {
 
 /* ------------------------- manual opportunity form ------------------------ */
 
+type ManualSourceType = "Social" | "LinkedIn" | "Foundation site" | "Email" | "Other";
 const sourceTypes: ManualSourceType[] = ["Social", "LinkedIn", "Foundation site", "Email", "Other"];
 type KnowledgeState = (typeof KNOWLEDGE_STATES)[number];
 
@@ -511,12 +512,6 @@ function ItemCard({
 
 /* --------------------------------- board card ---------------------------------- */
 
-const agencyIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  HUD: Landmark,
-  USDA: Leaf,
-  EPA: Building2,
-};
-
 function BoardCard({
   active,
   onClick,
@@ -623,8 +618,6 @@ function StatusDot({
 /* ---------------------------------- main page ---------------------------------- */
 
 function PipelinePage() {
-  const data = useConsoleData();
-
   const transcriptsQuery = useTranscripts();
   const liveTranscripts = transcriptsQuery.data ?? [];
   const { data: clients = [] } = useClients();
@@ -642,11 +635,6 @@ function PipelinePage() {
   const [dragOver, setDragOver] = useState<PipelineStage | null>(null);
   const [programLinks, setProgramLinks] = useState<Record<string, string>>({});
 
-  // Grants.gov feed is still sample data until a live feed is connected.
-  const opportunities = data.opportunities.filter(
-    (o) => o.status !== "added" && o.status !== "dismissed",
-  );
-
   const firstTranscript = liveTranscripts[0];
   const effective: CardRef | null =
     selected ?? (firstTranscript ? { kind: "transcript", id: firstTranscript.id } : null);
@@ -655,10 +643,6 @@ function PipelinePage() {
   const selectedTranscript =
     effective?.kind === "transcript"
       ? (liveTranscripts.find((t) => t.id === effective.id) ?? null)
-      : null;
-  const selectedOpportunity =
-    effective?.kind === "opportunity"
-      ? (data.opportunities.find((o) => o.id === effective.id) ?? null)
       : null;
 
   const selectedClient = selectedTranscript?.client_id
@@ -686,19 +670,6 @@ function PipelinePage() {
     setDragging(null);
     setDragOver(null);
     if (!ref) return;
-
-    if (ref.kind === "opportunity") {
-      const status = stage === "intake" ? "new" : stage === "extracted" ? "reviewed" : null;
-      if (!status) {
-        toast.info("Sample Grants.gov listings can only move between Intake and Extracted.");
-        return;
-      }
-      consoleStore.update((c) => ({
-        ...c,
-        opportunities: c.opportunities.map((o) => (o.id === ref.id ? { ...o, status } : o)),
-      }));
-      return;
-    }
 
     const transcript = liveTranscripts.find((t) => t.id === ref.id);
     if (!transcript || transcriptStage(transcript) === stage) return;
@@ -770,7 +741,11 @@ function PipelinePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-            <StatusDot tone="ok">Granola / Zoom paste-in</StatusDot>
+            <StatusDot tone="ok">
+              {integration?.zoomWebhook || integration?.ingestWebhook
+                ? "Auto-import on · paste or upload"
+                : "Granola / Zoom: paste or upload"}
+            </StatusDot>
             <StatusDot tone={aiTone}>
               {integration?.gemini
                 ? `AI extraction ready (${integration.geminiModel})`
@@ -815,17 +790,12 @@ function PipelinePage() {
           </div>
         )}
 
+        <GrantsFeed />
+
         <div className="mt-6 grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
           {stages.map((stage) => {
             const stageTranscripts = liveTranscripts.filter((t) => transcriptStage(t) === stage.id);
-            const stageOpps = opportunities.filter((o) =>
-              stage.id === "intake"
-                ? o.status === "new"
-                : stage.id === "extracted"
-                  ? o.status === "reviewed"
-                  : false,
-            );
-            const count = stageTranscripts.length + stageOpps.length;
+            const count = stageTranscripts.length;
 
             return (
               <div
@@ -869,27 +839,6 @@ function PipelinePage() {
                     );
                   })}
 
-                  {stageOpps.map((o) => {
-                    const Icon = agencyIcons[o.agency] || Landmark;
-                    return (
-                      <BoardCard
-                        key={o.id}
-                        active={isSelected({ kind: "opportunity", id: o.id })}
-                        onClick={() => setSelected({ kind: "opportunity", id: o.id })}
-                        onDragStart={() => setDragging({ kind: "opportunity", id: o.id })}
-                        tag="Opportunity"
-                        subTag={`Grants.gov sample · ${o.agency}`}
-                        title={o.title}
-                        meta={`Posted ${o.postedDate} · Closes ${o.closeDate}`}
-                        footer={
-                          <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                            <Icon className="size-3" /> Listing {o.assistanceListing}
-                          </p>
-                        }
-                      />
-                    );
-                  })}
-
                   {count === 0 && (
                     <p className="border border-dashed bg-background/50 px-3 py-6 text-center text-xs text-muted-foreground">
                       {transcriptsQuery.isLoading ? "Loading…" : "Nothing here yet"}
@@ -902,7 +851,7 @@ function PipelinePage() {
         </div>
       </div>
 
-      {(selectedTranscript || selectedOpportunity) && (
+      {selectedTranscript && (
         <aside className="w-full shrink-0 border-t bg-card xl:w-[480px] xl:border-l xl:border-t-0">
           <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto">
             {selectedTranscript && (
@@ -949,6 +898,12 @@ function PipelinePage() {
                     <X className="size-4" />
                   </Button>
                 </div>
+
+                {!selectedTranscript.client_id &&
+                  selectedTranscript.meeting_type !== "funding_feed" &&
+                  !isApproved && (
+                    <AssignTranscript transcript={selectedTranscript} clients={clients} />
+                  )}
 
                 <div className="mt-4 space-y-7">
                   {groups.map((group) => {
@@ -1069,50 +1024,6 @@ function PipelinePage() {
                     </Button>
                   )}
                 </div>
-              </div>
-            )}
-
-            {selectedOpportunity && (
-              <div className="px-5 py-5">
-                <div className="flex items-start justify-between gap-3 border-b pb-4">
-                  <div className="min-w-0">
-                    <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
-                      Grants.gov sample data
-                    </Badge>
-                    <h2 className="mt-2 text-base font-semibold leading-snug text-foreground">
-                      {selectedOpportunity.title}
-                    </h2>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {selectedOpportunity.agency} · Assistance Listing{" "}
-                      {selectedOpportunity.assistanceListing}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSelected(null)}
-                    aria-label="Close detail panel"
-                  >
-                    <X className="size-4" />
-                  </Button>
-                </div>
-                <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <dt className="text-xs text-muted-foreground">Posted</dt>
-                    <dd className="font-medium">{selectedOpportunity.postedDate}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-muted-foreground">Closes</dt>
-                    <dd className="font-medium">{selectedOpportunity.closeDate}</dd>
-                  </div>
-                  <div className="col-span-2">
-                    <dt className="text-xs text-muted-foreground">Award ceiling</dt>
-                    <dd className="font-medium">{selectedOpportunity.awardCeiling}</dd>
-                  </div>
-                </dl>
-                <p className="mt-4 text-sm leading-relaxed text-foreground/90">
-                  {selectedOpportunity.summary}
-                </p>
               </div>
             )}
           </div>

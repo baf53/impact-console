@@ -54,6 +54,7 @@ export type Database = {
           status: "new" | "extracting" | "ready" | "approved";
           stage: "intake" | "extracted" | "in-review" | "approved";
           raw_text: string;
+          external_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -68,6 +69,7 @@ export type Database = {
           status?: "new" | "extracting" | "ready" | "approved";
           stage?: "intake" | "extracted" | "in-review" | "approved";
           raw_text: string;
+          external_id?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["transcripts"]["Insert"]>;
@@ -301,6 +303,82 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["proposals_and_reports"]["Insert"]>;
+        Relationships: [];
+      };
+      answer_log: {
+        Row: {
+          id: string;
+          question: string;
+          answer: string;
+          state: string | null;
+          parcel: string | null;
+          citations: Json;
+          source: "chatbot" | "preview" | "manual";
+          rating: "good" | "needs-work" | "wrong" | null;
+          failure_cause: "retrieval" | "prompt" | "not-loaded" | null;
+          review_note: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          question: string;
+          answer: string;
+          state?: string | null;
+          parcel?: string | null;
+          citations?: Json;
+          source?: "chatbot" | "preview" | "manual";
+          rating?: "good" | "needs-work" | "wrong" | null;
+          failure_cause?: "retrieval" | "prompt" | "not-loaded" | null;
+          review_note?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["answer_log"]["Insert"]>;
+        Relationships: [];
+      };
+      golden_set: {
+        Row: {
+          id: string;
+          question: string;
+          state: string;
+          expected_answer: string;
+          required_programs: string[];
+          source_answer_id: string | null;
+          last_run_at: string | null;
+          last_run_answer: string | null;
+          last_run_passed: boolean | null;
+          last_run_reason: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          question: string;
+          state: string;
+          expected_answer: string;
+          required_programs?: string[];
+          source_answer_id?: string | null;
+          last_run_at?: string | null;
+          last_run_answer?: string | null;
+          last_run_passed?: boolean | null;
+          last_run_reason?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["golden_set"]["Insert"]>;
+        Relationships: [];
+      };
+      funding_feed_dismissed: {
+        Row: {
+          opportunity_id: string;
+          title: string;
+          dismissed_at: string;
+        };
+        Insert: {
+          opportunity_id: string;
+          title: string;
+          dismissed_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["funding_feed_dismissed"]["Insert"]>;
         Relationships: [];
       };
       app_activity_log: {

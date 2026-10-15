@@ -18,6 +18,9 @@ import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as KnowledgeBaseIndexRouteImport } from './routes/knowledge-base.index'
 import { Route as KnowledgeBaseProgramIdRouteImport } from './routes/knowledge-base.$programId'
+import { Route as ApiChatbotAnswersRouteImport } from './routes/api.chatbot.answers'
+import { Route as ApiIngestTranscriptRouteImport } from './routes/api.ingest.transcript'
+import { Route as ApiWebhooksZoomRouteImport } from './routes/api.webhooks.zoom'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +67,21 @@ const KnowledgeBaseProgramIdRoute = KnowledgeBaseProgramIdRouteImport.update({
   path: '/$programId',
   getParentRoute: () => KnowledgeBaseRoute,
 } as any)
+const ApiChatbotAnswersRoute = ApiChatbotAnswersRouteImport.update({
+  id: '/api/chatbot/answers',
+  path: '/api/chatbot/answers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIngestTranscriptRoute = ApiIngestTranscriptRouteImport.update({
+  id: '/api/ingest/transcript',
+  path: '/api/ingest/transcript',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebhooksZoomRoute = ApiWebhooksZoomRouteImport.update({
+  id: '/api/webhooks/zoom',
+  path: '/api/webhooks/zoom',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +93,9 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/knowledge-base/$programId': typeof KnowledgeBaseProgramIdRoute
   '/knowledge-base/': typeof KnowledgeBaseIndexRoute
+  '/api/chatbot/answers': typeof ApiChatbotAnswersRoute
+  '/api/ingest/transcript': typeof ApiIngestTranscriptRoute
+  '/api/webhooks/zoom': typeof ApiWebhooksZoomRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -85,6 +106,9 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/knowledge-base/$programId': typeof KnowledgeBaseProgramIdRoute
   '/knowledge-base': typeof KnowledgeBaseIndexRoute
+  '/api/chatbot/answers': typeof ApiChatbotAnswersRoute
+  '/api/ingest/transcript': typeof ApiIngestTranscriptRoute
+  '/api/webhooks/zoom': typeof ApiWebhooksZoomRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -97,6 +121,9 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/knowledge-base/$programId': typeof KnowledgeBaseProgramIdRoute
   '/knowledge-base/': typeof KnowledgeBaseIndexRoute
+  '/api/chatbot/answers': typeof ApiChatbotAnswersRoute
+  '/api/ingest/transcript': typeof ApiIngestTranscriptRoute
+  '/api/webhooks/zoom': typeof ApiWebhooksZoomRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -110,6 +137,9 @@ export interface FileRouteTypes {
     | '/reports'
     | '/knowledge-base/$programId'
     | '/knowledge-base/'
+    | '/api/chatbot/answers'
+    | '/api/ingest/transcript'
+    | '/api/webhooks/zoom'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -120,6 +150,9 @@ export interface FileRouteTypes {
     | '/reports'
     | '/knowledge-base/$programId'
     | '/knowledge-base'
+    | '/api/chatbot/answers'
+    | '/api/ingest/transcript'
+    | '/api/webhooks/zoom'
   id:
     | '__root__'
     | '/'
@@ -131,6 +164,9 @@ export interface FileRouteTypes {
     | '/reports'
     | '/knowledge-base/$programId'
     | '/knowledge-base/'
+    | '/api/chatbot/answers'
+    | '/api/ingest/transcript'
+    | '/api/webhooks/zoom'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -141,6 +177,9 @@ export interface RootRouteChildren {
   KnowledgeBaseRoute: typeof KnowledgeBaseRouteWithChildren
   PipelineRoute: typeof PipelineRoute
   ReportsRoute: typeof ReportsRoute
+  ApiChatbotAnswersRoute: typeof ApiChatbotAnswersRoute
+  ApiIngestTranscriptRoute: typeof ApiIngestTranscriptRoute
+  ApiWebhooksZoomRoute: typeof ApiWebhooksZoomRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -208,6 +247,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KnowledgeBaseProgramIdRouteImport
       parentRoute: typeof KnowledgeBaseRoute
     }
+    '/api/chatbot/answers': {
+      id: '/api/chatbot/answers'
+      path: '/api/chatbot/answers'
+      fullPath: '/api/chatbot/answers'
+      preLoaderRoute: typeof ApiChatbotAnswersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ingest/transcript': {
+      id: '/api/ingest/transcript'
+      path: '/api/ingest/transcript'
+      fullPath: '/api/ingest/transcript'
+      preLoaderRoute: typeof ApiIngestTranscriptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/zoom': {
+      id: '/api/webhooks/zoom'
+      path: '/api/webhooks/zoom'
+      fullPath: '/api/webhooks/zoom'
+      preLoaderRoute: typeof ApiWebhooksZoomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -233,6 +293,9 @@ const rootRouteChildren: RootRouteChildren = {
   KnowledgeBaseRoute: KnowledgeBaseRouteWithChildren,
   PipelineRoute: PipelineRoute,
   ReportsRoute: ReportsRoute,
+  ApiChatbotAnswersRoute: ApiChatbotAnswersRoute,
+  ApiIngestTranscriptRoute: ApiIngestTranscriptRoute,
+  ApiWebhooksZoomRoute: ApiWebhooksZoomRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

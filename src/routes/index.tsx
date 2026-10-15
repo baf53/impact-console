@@ -4,6 +4,7 @@ import { CheckCircle2, CircleAlert, FileText, LibraryBig, type LucideIcon } from
 
 import { Button } from "@/components/ui/button";
 import { useDashboard } from "@/hooks/use-knowledge";
+import { useIntegrationStatus } from "@/hooks/use-pipeline";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,6 +52,87 @@ const statusStyles = {
   updated: "bg-muted-foreground/40",
 };
 
+type Integration = { label: string; ok: boolean | undefined; on: string; off: string };
+
+function SetupChecklist() {
+  const { data } = useIntegrationStatus();
+  const items: Integration[] = [
+    {
+      label: "Secure database access",
+      ok: data?.supabaseSecretKey,
+      on: "Server uses the secret key",
+      off: "Add SUPABASE_SECRET_KEY, then run supabase_step2_security.sql",
+    },
+    {
+      label: "Feature tables",
+      ok: data?.step3Migration,
+      on: "Answer Log, Golden Set and Grants.gov tables ready",
+      off: "Run supabase_step3_features.sql",
+    },
+    {
+      label: "AI (Gemini)",
+      ok: data?.gemini,
+      on: `Extraction, previews and report analysis on (${data?.geminiModel ?? ""})`,
+      off: "Add GEMINI_API_KEY",
+    },
+    {
+      label: "Client alert emails",
+      ok: data?.email,
+      on: "Alerts are sent through Resend",
+      off: "Optional: add RESEND_API_KEY and ALERT_FROM_EMAIL (until then alerts open in your email app)",
+    },
+    {
+      label: "Zoom auto-import",
+      ok: data?.zoomWebhook,
+      on: "Finished Zoom transcripts arrive in Intake",
+      off: "Optional: add ZOOM_WEBHOOK_SECRET_TOKEN (see docs/integrations.md)",
+    },
+    {
+      label: "Granola / webhook import",
+      ok: data?.ingestWebhook,
+      on: "Transcripts can be posted to /api/ingest/transcript",
+      off: "Optional: add INGEST_WEBHOOK_SECRET (see docs/integrations.md)",
+    },
+    {
+      label: "Chatbot answer logging",
+      ok: data?.chatbotLog,
+      on: "The chatbot can log answers to /api/chatbot/answers",
+      off: "Optional: add CHATBOT_LOG_SECRET and share it with the chatbot team",
+    },
+  ];
+
+  return (
+    <section className="mt-10">
+      <div className="mb-4">
+        <h2 className="text-base font-semibold text-foreground">Setup</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          What's connected, and what each remaining item needs.
+        </p>
+      </div>
+      <ul className="divide-y border bg-card">
+        {items.map((item) => (
+          <li key={item.label} className="flex items-start gap-3 px-5 py-3">
+            {item.ok ? (
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-label="Done" />
+            ) : (
+              <CircleAlert
+                className="mt-0.5 size-4 shrink-0 text-warning"
+                aria-label="Not set up"
+              />
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">{item.label}</p>
+              <p className="text-xs text-muted-foreground">
+                {data === undefined ? "Checking…" : item.ok ? item.on : item.off}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function Dashboard() {
   const { data, isLoading, isError, error, refetch, dataUpdatedAt } = useDashboard();
   const stats = [
@@ -94,6 +176,8 @@ function Dashboard() {
           <StatCard key={stat.label} {...stat} />
         ))}
       </section>
+
+      <SetupChecklist />
 
       <section className="mt-10">
         <div className="mb-4">

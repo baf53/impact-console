@@ -404,18 +404,32 @@ function ReportView({ report, client }: { report: ReportRow; client: ClientRow |
         </Section>
       )}
 
-      {report.stacking && (
+      {programs.length > 0 && (
         <Section title="Funding stack">
           <ol className="space-y-1.5 rounded-md border bg-muted/30 p-4">
-            {report.stacking.split("\n").map((line) => (
-              <li key={line} className="text-sm leading-relaxed tabular-nums">
-                {line}
+            {programs.map((p, i) => (
+              <li key={p.id} className="text-sm leading-relaxed tabular-nums">
+                {i + 1}. {p.level}: {p.name} — {p.funds}
               </li>
             ))}
           </ol>
           <p className="flex items-center gap-2 text-xs text-muted-foreground print:hidden">
             <Info className="h-3 w-3" />
             Ordered by program level. Confirm amounts and sequencing before presenting.
+          </p>
+        </Section>
+      )}
+
+      {report.stacking && (
+        <Section title="Stacking analysis">
+          <div className="space-y-3 rounded-md border p-4 text-sm leading-relaxed">
+            {report.stacking.split(/\n{2,}/).map((para) => (
+              <p key={para}>{para}</p>
+            ))}
+          </div>
+          <p className="flex items-center gap-2 text-xs text-muted-foreground print:hidden">
+            <Sparkles className="h-3 w-3" />
+            Drafted by AI from this report's programs and notes. Review before sending.
           </p>
         </Section>
       )}

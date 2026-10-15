@@ -25,8 +25,10 @@ import {
   useDeleteAlert,
   useGenerateReport,
   useUpdateAlert,
+  useSendAlert,
   useUpdateClient,
 } from "@/hooks/use-deals";
+import { useIntegrationStatus } from "@/hooks/use-pipeline";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/client-sites")({
@@ -188,6 +190,8 @@ function ClientSitesPage() {
   const updateClient = useUpdateClient();
   const updateAlert = useUpdateAlert();
   const deleteAlert = useDeleteAlert();
+  const sendAlert = useSendAlert();
+  const { data: integration } = useIntegrationStatus();
   const generateReport = useGenerateReport();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -440,8 +444,10 @@ function ClientSitesPage() {
           <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
             <BellRing className="mt-0.5 size-4 shrink-0 text-warning-foreground" />
             <p className="text-sm text-warning-foreground">
-              {pendingCount} draft{pendingCount === 1 ? "" : "s"} waiting on you. Approved alerts
-              open in your email client — send them from there, then mark them as sent.
+              {pendingCount} draft{pendingCount === 1 ? "" : "s"} waiting on you.{" "}
+              {integration?.email
+                ? "Approved alerts are emailed to the client when you press Send."
+                : "Approved alerts open in your email client — send them from there, then mark them as sent."}
             </p>
           </div>
 
@@ -536,16 +542,28 @@ function ClientSitesPage() {
                         >
                           <Undo2 className="size-4" /> Back to draft
                         </Button>
-                        <Button variant="outline" asChild disabled={!client?.email}>
-                          <a href={mailtoLink(client, alert)}>
-                            <Mail className="size-4" /> Open in email
-                          </a>
-                        </Button>
-                        <Button
-                          onClick={() => updateAlert.mutate({ id: alert.id, status: "sent" })}
-                        >
-                          Mark as sent
-                        </Button>
+                        {integration?.email ? (
+                          <Button
+                            disabled={!client?.email || sendAlert.isPending}
+                            onClick={() => sendAlert.mutate(alert.id)}
+                          >
+                            <Mail className="size-4" />
+                            {sendAlert.isPending ? "Sending…" : "Send email"}
+                          </Button>
+                        ) : (
+                          <>
+                            <Button variant="outline" asChild disabled={!client?.email}>
+                              <a href={mailtoLink(client, alert)}>
+                                <Mail className="size-4" /> Open in email
+                              </a>
+                            </Button>
+                            <Button
+                              onClick={() => updateAlert.mutate({ id: alert.id, status: "sent" })}
+                            >
+                              Mark as sent
+                            </Button>
+                          </>
+                        )}
                       </>
                     )}
                   </div>

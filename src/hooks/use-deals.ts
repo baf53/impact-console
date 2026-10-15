@@ -10,6 +10,7 @@ import {
   getDealsFn,
   listReportsFn,
   updateAlertFn,
+  sendAlertFn,
   updateClientFn,
   ALERT_TRIGGERS,
   DEAL_STAGES,
@@ -55,6 +56,9 @@ export function useGenerateReport() {
     onSuccess: (report) => {
       invalidate();
       toast.success("Report generated", { description: report.project_label });
+      if (report.narrativeError) {
+        toast.warning("Stacking analysis wasn't drafted", { description: report.narrativeError });
+      }
     },
     onError: (err) => toast.error("Could not generate report", { description: errorMessage(err) }),
   });
@@ -146,5 +150,17 @@ export function useDeleteAlert() {
       toast("Alert dismissed", { description: "Nothing was sent to the client." });
     },
     onError: (err) => toast.error("Could not dismiss alert", { description: errorMessage(err) }),
+  });
+}
+
+export function useSendAlert() {
+  const invalidate = useInvalidateDeals();
+  return useMutation({
+    mutationFn: (id: string) => sendAlertFn({ data: { id } }),
+    onSuccess: (alert) => {
+      invalidate();
+      toast.success("Alert emailed to the client", { description: alert.title });
+    },
+    onError: (err) => toast.error("Could not send email", { description: errorMessage(err) }),
   });
 }

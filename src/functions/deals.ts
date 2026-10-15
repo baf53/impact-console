@@ -4,6 +4,8 @@ import { z } from "zod";
 import type { ClientRow, ExtractionRow, ProgramRow } from "@/lib/pipeline";
 import { candidatePrograms, matchProgram } from "@/lib/states";
 import { logActivity } from "@/server/activity.server";
+import { hasGeminiKey, writeStackingAnalysis } from "@/server/ai.server";
+import { sendEmail } from "@/server/email.server";
 import { dbError, getServerSupabase } from "@/server/supabase.server";
 import type { Database, Json } from "@/types/database";
 
@@ -247,9 +249,30 @@ export const generateReportFn = createServerFn({ method: "POST" })
       ...requiredInfo.map((i) => `${i.title}: ${i.body}`),
     ].join("\n");
 
-    const stacking = programs.length
-      ? programs.map((p, i) => `${i + 1}. ${p.level}: ${p.name} — ${p.funds}`).join("\n")
-      : null;
+    // The funding stack itself is rendered from `programs`; `stacking` holds the
+    // AI-drafted narrative when Gemini is configured. A failed draft never blocks the report.
+    let stacking: string | null = null;
+    let narrativeError: string | null = null;
+    if (hasGeminiKey() && programs.length > 0) {
+      try {
+        stacking = await writeStackingAnalysis({
+          parcel: parcelSummary,
+          painPoints: byCategory("pain_point").map((i) => `${i.title}: ${i.body}`),
+          programs: programs.map((p) => ({
+            name: p.name,
+            level: p.level,
+            state: p.state,
+            funds: p.funds,
+            overview: p.overview,
+            fit: p.fit,
+          })),
+          notes: notesRes.data.map((n) => n.text),
+        });
+      } catch (err) {
+        narrativeError = err instanceof Error ? err.message : String(err);
+        console.error("Stacking analysis failed:", narrativeError);
+      }
+    }
 
     const { data: report, error } = await db
       .from("proposals_and_reports")
@@ -275,10 +298,10 @@ export const generateReportFn = createServerFn({ method: "POST" })
     await logActivity({
       action: "Proposal generated",
       subject: client.parcel_address,
-      detail: `${programs.length} programs · ${sources.length} sources${discussed ? "" : " · no programs linked yet"}`,
+      detail: `${programs.length} programs · ${sources.length} sources${discussed ? "" : " · no programs linked yet"}${stacking ? " · AI stacking analysis" : ""}`,
       status: "generated",
     });
-    return report;
+    return { ...report, narrativeError };
   });
 
 export const deleteReportFn = createServerFn({ method: "POST" })
@@ -394,3 +417,51 @@ export const deleteAlertFn = createServerFn({ method: "POST" })
   });
 
 export type { ClientRow };
+
+/** Emails an approved alert to the client through Resend, then marks it sent. */
+export const sendAlertFn = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    const db = getServerSupabase();
+    const { data: alert, error } = await db
+      .from("client_alerts")
+      .select("*")
+      .eq("id", data.id)
+      .single();
+    if (error) throw dbError(error, "Could not load alert");
+    if (alert.status !== "approved") throw new Error("Approve the alert before sending it.");
+
+    const { data: client, error: clientError } = await db
+      .from("clients")
+      .select("*")
+      .eq("id", alert.client_id)
+      .single();
+    if (clientError) throw dbError(clientError, "Could not load client");
+    if (!client.alerts_enabled) throw new Error("Alerts are switched off for this client.");
+    if (!client.email) throw new Error("This client has no email address on file.");
+
+    await sendEmail({ to: client.email, subject: alert.title, text: alert.draft_email });
+
+    const { data: sent, error: saveError } = await db
+      .from("client_alerts")
+      .update({
+        status: "sent",
+        sent_on: new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+      })
+      .eq("id", alert.id)
+      .select()
+      .single();
+    if (saveError) throw dbError(saveError, "Email sent, but the alert couldn't be marked sent");
+
+    await logActivity({
+      action: "Alert emailed to client",
+      subject: alert.title,
+      detail: `${client.client_name} · ${client.email}`,
+      status: "approved",
+    });
+    return sent;
+  });

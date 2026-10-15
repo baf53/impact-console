@@ -20,6 +20,7 @@ import {
 } from "@/lib/states";
 import { DEFAULT_GEMINI_MODEL, extractTranscript, hasGeminiKey } from "@/server/ai.server";
 import { logActivity } from "@/server/activity.server";
+import { hasEmailConfig } from "@/server/email.server";
 import { dbError, getServerSupabase, hasSecretKey } from "@/server/supabase.server";
 import type { Database } from "@/types/database";
 
@@ -50,11 +51,20 @@ function shortSubject(label: string) {
 
 /* --------------------------------- reads --------------------------------- */
 
-export const getIntegrationStatusFn = createServerFn({ method: "GET" }).handler(async () => ({
-  gemini: hasGeminiKey(),
-  geminiModel: process.env["GEMINI_MODEL"] || DEFAULT_GEMINI_MODEL,
-  supabaseSecretKey: hasSecretKey(),
-}));
+export const getIntegrationStatusFn = createServerFn({ method: "GET" }).handler(async () => {
+  // A cheap probe for the step-3 tables, so screens can say when the migration is missing.
+  const probe = await getServerSupabase().from("answer_log").select("id").limit(1);
+  return {
+    gemini: hasGeminiKey(),
+    geminiModel: process.env["GEMINI_MODEL"] || DEFAULT_GEMINI_MODEL,
+    supabaseSecretKey: hasSecretKey(),
+    step3Migration: !probe.error,
+    email: hasEmailConfig(),
+    zoomWebhook: Boolean(process.env["ZOOM_WEBHOOK_SECRET_TOKEN"]),
+    ingestWebhook: Boolean(process.env["INGEST_WEBHOOK_SECRET"]),
+    chatbotLog: Boolean(process.env["CHATBOT_LOG_SECRET"]),
+  };
+});
 
 export const listClientsFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<ClientRow[]> => {
@@ -521,4 +531,54 @@ export const approveTranscriptFn = createServerFn({ method: "POST" })
     });
 
     return { approved: items.length, notes: notes.length, createdPrograms: created.length };
+  });
+
+/** Links an imported transcript (Zoom, Granola, webhook) to a client deal. */
+export const assignTranscriptFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      transcriptId: z.string().min(1),
+      clientId: z.string().min(1),
+      meetingType: z.enum(["meeting_1", "meeting_2", "ad_hoc"]),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const db = getServerSupabase();
+    const transcript = await getTranscript(data.transcriptId);
+    if (transcript.status === "approved")
+      throw new Error("Approved transcripts can't be reassigned.");
+    if (transcript.meeting_type === "funding_feed") {
+      throw new Error("Funding opportunities aren't tied to a client.");
+    }
+    const client = await getClient(data.clientId);
+    if (!client) throw new Error("That client no longer exists.");
+
+    const location = [client.parcel_address, client.city].filter(Boolean).join(", ");
+    const { data: updated, error } = await db
+      .from("transcripts")
+      .update({
+        client_id: client.id,
+        project_label: `${location}, ${client.state}`,
+        organization: client.organization,
+        meeting_type: data.meetingType,
+      })
+      .eq("id", transcript.id)
+      .select()
+      .single();
+    if (error) throw dbError(error, "Could not assign transcript");
+
+    const items = await db
+      .from("extractions")
+      .update({ client_id: client.id })
+      .eq("transcript_id", transcript.id);
+    if (items.error)
+      throw dbError(items.error, "Transcript assigned, but its items kept no client");
+
+    await logActivity({
+      action: "Transcript assigned to client",
+      subject: client.parcel_address,
+      detail: `${transcript.source} · ${meetingLabel(data.meetingType)} · ${client.client_name}`,
+      status: "updated",
+    });
+    return updated;
   });

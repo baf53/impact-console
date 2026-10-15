@@ -32,8 +32,18 @@ export function getServerSupabase(): SupabaseClient<Database> {
   return client;
 }
 
+/** True when PostgREST reports an unknown table or column (a migration hasn't been run). */
+export function isMissingSchema(error: PostgrestError) {
+  return ["PGRST204", "PGRST205", "42P01", "42703"].includes(error.code);
+}
+
 /** Turns a PostgREST error into an Error with a message the operator can act on. */
 export function dbError(error: PostgrestError, action: string): Error {
+  if (isMissingSchema(error)) {
+    return new Error(
+      `${action}: the database is missing a table or column this feature needs. Run supabase_step3_features.sql in the Supabase SQL Editor.`,
+    );
+  }
   const rlsDenied = error.code === "42501" || /row-level security/i.test(error.message);
   const hint =
     rlsDenied && !hasSecretKey()
