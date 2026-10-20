@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   createAlertFn,
   deleteAlertFn,
+  deleteClientFn,
   deleteReportFn,
   generateReportFn,
   getChecklistFn,
@@ -162,5 +163,23 @@ export function useSendAlert() {
       toast.success("Alert emailed to the client", { description: alert.title });
     },
     onError: (err) => toast.error("Could not send email", { description: errorMessage(err) }),
+  });
+}
+
+export function useDeleteClient() {
+  const invalidate = useInvalidateDeals();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteClientFn({ data: { id } }),
+    onSuccess: (result) => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() });
+      toast.success("Client deleted", {
+        description: result.keptTranscripts
+          ? `${result.name} · ${result.keptTranscripts} transcript${result.keptTranscripts === 1 ? "" : "s"} kept in the Pipeline, unassigned`
+          : result.name,
+      });
+    },
+    onError: (err) => toast.error("Could not delete client", { description: errorMessage(err) }),
   });
 }

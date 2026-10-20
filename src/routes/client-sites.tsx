@@ -1,8 +1,19 @@
 import { useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { BellRing, FileText, Mail, Plus, ShieldCheck, Undo2, X } from "lucide-react";
+import { BellRing, FileText, Mail, Plus, ShieldCheck, Trash2, Undo2, X } from "lucide-react";
 
 import { DealChecklist } from "@/components/deal-checklist";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +34,7 @@ import {
   useCreateAlert,
   useDeals,
   useDeleteAlert,
+  useDeleteClient,
   useGenerateReport,
   useUpdateAlert,
   useSendAlert,
@@ -193,6 +205,7 @@ function ClientSitesPage() {
   const updateAlert = useUpdateAlert();
   const deleteAlert = useDeleteAlert();
   const sendAlert = useSendAlert();
+  const deleteClient = useDeleteClient();
   const { data: integration } = useIntegrationStatus();
   const generateReport = useGenerateReport();
 
@@ -435,6 +448,44 @@ function ClientSitesPage() {
                             </li>
                           )}
                       </ul>
+                    </div>
+
+                    <div className="border-t pt-4">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            disabled={deleteClient.isPending}
+                          >
+                            <Trash2 /> Delete client
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete “{selected.client_name}”?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              The client, their reports and alerts are deleted. Their call
+                              transcripts stay in the Pipeline, unassigned, so call records are kept
+                              — delete them there if they're test data. Knowledge Base programs are
+                              not affected. This can't be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() =>
+                                deleteClient.mutate(selected.id, {
+                                  onSuccess: () => setSelectedId(null),
+                                })
+                              }
+                            >
+                              Delete client
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </CardContent>
                 </Card>

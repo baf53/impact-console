@@ -465,3 +465,41 @@ export const sendAlertFn = createServerFn({ method: "POST" })
     });
     return sent;
   });
+
+/**
+ * Deletes a client deal with its reports and alerts. Its call transcripts are kept,
+ * unassigned (call records are never lost); delete them in the Pipeline if they're
+ * test data. Knowledge Base programs and notes are untouched.
+ */
+export const deleteClientFn = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    const db = getServerSupabase();
+    // Documents that belonged to the client must not become public once unlinked.
+    const docs = await db
+      .from("app_documents")
+      .update({ status: "Pending review" })
+      .eq("client_id", data.id);
+    if (docs.error) throw dbError(docs.error, "Could not secure the client's documents");
+
+    const { count: transcriptCount } = await db
+      .from("transcripts")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", data.id);
+
+    const { data: client, error } = await db
+      .from("clients")
+      .delete()
+      .eq("id", data.id)
+      .select("client_name, parcel_address")
+      .single();
+    if (error) throw dbError(error, "Could not delete client");
+
+    await logActivity({
+      action: "Client deleted",
+      subject: client.parcel_address,
+      detail: `${client.client_name}${transcriptCount ? ` · ${transcriptCount} transcript${transcriptCount === 1 ? "" : "s"} kept, unassigned` : ""}`,
+      status: "updated",
+    });
+    return { id: data.id, name: client.client_name, keptTranscripts: transcriptCount ?? 0 };
+  });
