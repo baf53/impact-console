@@ -226,3 +226,42 @@ export const deleteNoteFn = createServerFn({ method: "POST" })
     });
     return { id: data.id };
   });
+
+/**
+ * Removes a program and, through the foreign keys, its notes, contacts and source
+ * citations. Uploaded files stay in Documents, unlinked. Clients stop targeting it.
+ */
+export const deleteProgramFn = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    const db = getServerSupabase();
+    const { data: program, error } = await db
+      .from("knowledge_programs")
+      .delete()
+      .eq("id", data.id)
+      .select("name, state")
+      .single();
+    if (error) throw dbError(error, "Could not delete program");
+
+    const { data: clients, error: clientsError } = await db
+      .from("clients")
+      .select("id, target_programs")
+      .contains("target_programs", [program.name]);
+    if (clientsError)
+      console.error("Could not load clients targeting the program:", clientsError.message);
+    for (const client of clients ?? []) {
+      const { error: updateError } = await db
+        .from("clients")
+        .update({ target_programs: client.target_programs.filter((n) => n !== program.name) })
+        .eq("id", client.id);
+      if (updateError) console.error("Could not update client targets:", updateError.message);
+    }
+
+    await logActivity({
+      action: "Program deleted",
+      subject: program.name,
+      detail: `${program.state} · its practitioner notes were removed with it`,
+      status: "updated",
+    });
+    return { id: data.id, name: program.name };
+  });

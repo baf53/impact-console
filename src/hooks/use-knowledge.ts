@@ -5,6 +5,7 @@ import { getDashboardFn } from "@/functions/dashboard";
 import {
   createProgramFn,
   deleteNoteFn,
+  deleteProgramFn,
   getProgramFn,
   listProgramSummariesFn,
   updateProgramFn,
@@ -86,5 +87,17 @@ export function useDeleteNote() {
       toast.success("Note removed from the Knowledge Base");
     },
     onError: (err) => toast.error("Could not remove note", { description: errorMessage(err) }),
+  });
+}
+
+export function useDeleteProgram() {
+  const invalidate = useInvalidateKnowledge();
+  return useMutation({
+    mutationFn: (id: string) => deleteProgramFn({ data: { id } }),
+    onSuccess: (result) => {
+      invalidate();
+      toast.success("Program deleted", { description: result.name });
+    },
+    onError: (err) => toast.error("Could not delete program", { description: errorMessage(err) }),
   });
 }

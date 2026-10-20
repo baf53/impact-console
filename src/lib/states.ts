@@ -30,6 +30,23 @@ export function stateFromLabel(label: string): string | null {
   return code && code in STATE_NAMES ? code : null;
 }
 
+// Federal programs, whatever state they're discussed in. "HOME" counts only in capitals
+// (the HOME Investment Partnerships Program), never the everyday word.
+const FEDERAL_PROGRAM =
+  /\b(CDBG|LIHTC|HUD|USDA|HOPWA|Section\s*(8|108|202|515|538|811)|Low[- ]Income Housing Tax Credits?|Community Development Block Grants?|HOME Investment Partnerships?|National Housing Trust Fund|Choice Neighborhoods|Opportunity Zones?|Federal Home Loan Bank)\b/i;
+
+/**
+ * The state a program belongs to, read from its name: "Kansas Moderate Income Housing" →
+ * KS, "CDBG Small Cities" → Federal. Null when the name doesn't say.
+ */
+export function stateFromProgramName(name: string): string | null {
+  for (const [code, stateName] of Object.entries(STATE_NAMES)) {
+    if (code !== "Federal" && new RegExp(`\\b${stateName}\\b`, "i").test(name)) return code;
+  }
+  if (FEDERAL_PROGRAM.test(name) || /\bHOME\b/.test(name)) return "Federal";
+  return null;
+}
+
 const STOPWORDS = new Set([
   "the",
   "and",

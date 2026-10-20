@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import {
-  NEW_PROGRAM,
+  parseProgramLink,
   STAGE_LABELS,
   meetingLabel,
   type ClientRow,
@@ -414,9 +414,13 @@ export const approveTranscriptFn = createServerFn({ method: "POST" })
 
     const existingIds = [
       ...new Set(
-        subsidies.map((i) => data.programLinks[i.id]).filter((id) => id && id !== NEW_PROGRAM),
+        subsidies.flatMap((i) => {
+          const link = data.programLinks[i.id];
+          const parsed = link ? parseProgramLink(link) : null;
+          return parsed?.kind === "existing" ? [parsed.id] : [];
+        }),
       ),
-    ] as string[];
+    ];
     const programsById = new Map<string, ProgramRow>();
     if (existingIds.length > 0) {
       const { data: programs, error } = await db
@@ -427,27 +431,35 @@ export const approveTranscriptFn = createServerFn({ method: "POST" })
       for (const p of programs) programsById.set(p.id, p);
     }
 
-    // Validate every link before writing anything.
+    // Validate every link before writing anything. A new program is tagged with the
+    // state chosen for it (e.g. Federal for CDBG), falling back to the deal's state.
+    const newProgramState = new Map<string, string>();
     for (const item of subsidies) {
       const link = data.programLinks[item.id];
       if (!link) throw new Error(`Choose a Knowledge Base program for "${item.title}".`);
-      if (link === NEW_PROGRAM && !state) {
+      const parsed = parseProgramLink(link);
+      if (parsed.kind === "existing") {
+        if (!programsById.has(parsed.id)) {
+          throw new Error(`The program linked to "${item.title}" no longer exists.`);
+        }
+        continue;
+      }
+      const programState = parsed.state ?? state;
+      if (!programState || !(KNOWLEDGE_STATES as readonly string[]).includes(programState)) {
         throw new Error(
-          `"${item.title}" can't become a new program because this transcript has no state. Link it to an existing program.`,
+          `"${item.title}" needs a state (OK, KS, FL, MD or Federal) before it can become a program.`,
         );
       }
-      if (link !== NEW_PROGRAM && !programsById.has(link)) {
-        throw new Error(`The program linked to "${item.title}" no longer exists.`);
-      }
+      newProgramState.set(item.id, programState);
     }
 
     const created: ProgramRow[] = [];
     const notes: Database["public"]["Tables"]["program_notes"]["Insert"][] = [];
     for (const item of subsidies) {
-      const link = data.programLinks[item.id]!;
-      let program = programsById.get(link);
+      const parsed = parseProgramLink(data.programLinks[item.id]!);
+      let program = parsed.kind === "existing" ? programsById.get(parsed.id) : undefined;
       if (!program) {
-        const programState = state!;
+        const programState = newProgramState.get(item.id)!;
         const { data: newProgram, error } = await db
           .from("knowledge_programs")
           .insert({

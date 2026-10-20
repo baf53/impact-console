@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
   Building2,
@@ -47,8 +47,8 @@ import {
   useUpdateTranscriptStage,
 } from "@/hooks/use-pipeline";
 import {
-  NEW_PROGRAM,
   meetingLabel,
+  newProgramLink,
   type ExtractionCategory,
   type ExtractionRow,
   type PipelineStage,
@@ -57,9 +57,9 @@ import {
 } from "@/lib/pipeline";
 import {
   KNOWLEDGE_STATES,
-  candidatePrograms,
   matchProgram,
   stateFromLabel,
+  stateFromProgramName,
   stateLabel,
 } from "@/lib/states";
 import { cn } from "@/lib/utils";
@@ -306,21 +306,97 @@ const routingHints: Record<ExtractionRow["routing"], string> = {
 
 type ExtractionPatch = Partial<Pick<ExtractionRow, "status" | "body" | "routing">>;
 
+const DEAL_CATEGORIES: [ExtractionCategory, string][] = [
+  ["pain_point", "pain point"],
+  ["required_info", "project detail"],
+  ["missing_document", "missing document"],
+  ["next_step", "next step"],
+];
+
+/** For an approved transcript: what was approved and where each part went. */
+function ApprovedSummary({
+  transcript,
+  programs,
+}: {
+  transcript: TranscriptWithExtractions;
+  programs: ProgramRow[];
+}) {
+  const approved = transcript.extractions.filter((i) => i.status === "approved");
+  const dealParts = DEAL_CATEGORIES.map(([category, label]) => {
+    const n = approved.filter((i) => i.category === category).length;
+    return n > 0 ? `${n} ${label}${n === 1 ? "" : "s"}` : null;
+  }).filter(Boolean);
+
+  return (
+    <div className="mt-4 space-y-2 border border-primary/30 bg-primary/5 p-3 text-xs leading-5 text-foreground">
+      <p className="flex items-center gap-1.5 font-medium">
+        <CircleCheck className="size-3.5 text-primary" aria-hidden="true" />
+        Approved — {approved.length} item{approved.length === 1 ? "" : "s"}. Here's where they went:
+      </p>
+      {transcript.programs.length > 0 && (
+        <p>
+          <span className="font-medium">Knowledge Base:</span>{" "}
+          {transcript.programs.map((name, i) => {
+            const program = programs.find((p) => p.name === name);
+            return (
+              <span key={name}>
+                {i > 0 && ", "}
+                {program ? (
+                  <Link
+                    to="/knowledge-base/$programId"
+                    params={{ programId: program.id }}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    {name} ({program.state})
+                  </Link>
+                ) : (
+                  `${name} (removed)`
+                )}
+              </span>
+            );
+          })}{" "}
+          — saved as practitioner notes the chatbot can use.
+        </p>
+      )}
+      {dealParts.length > 0 && (
+        <p>
+          <span className="font-medium">This deal:</span> {dealParts.join(" · ")} —{" "}
+          {transcript.client_id ? (
+            <Link
+              to="/client-sites"
+              search={{ client: transcript.client_id }}
+              className="font-medium text-primary hover:underline"
+            >
+              see the client's checklist and proposals
+            </Link>
+          ) : (
+            "no client is linked, so they aren't on any deal yet"
+          )}
+          .
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ProgramLinkSelect({
   item,
   value,
   programs,
-  state,
+  newStates,
+  dealState,
   onChange,
   disabled,
 }: {
   item: ExtractionRow;
   value: string;
   programs: ProgramRow[];
-  state: string | null;
+  newStates: string[];
+  dealState: string | null;
   onChange: (value: string) => void;
   disabled: boolean;
 }) {
+  const named = stateFromProgramName(item.title);
   return (
     <div className="mt-3 space-y-1">
       <Label htmlFor={`link-${item.id}`} className="text-xs text-muted-foreground">
@@ -336,14 +412,20 @@ function ProgramLinkSelect({
               {p.name} · {p.state}
             </SelectItem>
           ))}
-          {state && (
-            <>
-              {programs.length > 0 && <SelectSeparator />}
-              <SelectItem value={NEW_PROGRAM}>+ New {state} program from this item</SelectItem>
-            </>
-          )}
+          {newStates.length > 0 && programs.length > 0 && <SelectSeparator />}
+          {newStates.map((code) => (
+            <SelectItem key={code} value={newProgramLink(code)}>
+              + New {code} program from this item
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
+      {named && dealState && named !== dealState && (
+        <p className="text-xs text-muted-foreground">
+          Its name points to {stateLabel(named)}, while this deal is in {dealState}. The chatbot
+          shows a program only to visitors in its state.
+        </p>
+      )}
     </div>
   );
 }
@@ -651,18 +733,27 @@ function PipelinePage() {
   const selectedState = selectedTranscript
     ? (selectedClient?.state ?? stateFromLabel(selectedTranscript.project_label))
     : null;
-  const linkablePrograms = candidatePrograms(programs, selectedState);
 
   const items = selectedTranscript?.extractions ?? [];
   const approvedItems = items.filter((i) => i.status === "approved");
   const isApproved = selectedTranscript?.status === "approved";
 
+  // Programs a subsidy can link to: the deal's state, Federal, and any state its name points to.
+  const linkOptions = (item: ExtractionRow) => {
+    const named = stateFromProgramName(item.title);
+    const states = new Set([selectedState, named, "Federal"].filter(Boolean) as string[]);
+    const pool = selectedState || named ? programs.filter((p) => states.has(p.state)) : programs;
+    return { pool, named, newStates: [...states] };
+  };
+
   const linkFor = (item: ExtractionRow) => {
     const chosen = programLinks[item.id];
     if (chosen) return chosen;
-    const match = matchProgram(item.title, linkablePrograms);
+    const { pool, named } = linkOptions(item);
+    const match = matchProgram(item.title, pool);
     if (match) return match.id;
-    return selectedState ? NEW_PROGRAM : "";
+    const target = named ?? selectedState;
+    return target ? newProgramLink(target) : "";
   };
 
   const drop = (stage: PipelineStage) => {
@@ -901,6 +992,10 @@ function PipelinePage() {
                   </Button>
                 </div>
 
+                {isApproved && (
+                  <ApprovedSummary transcript={selectedTranscript} programs={programs} />
+                )}
+
                 {!selectedTranscript.client_id &&
                   selectedTranscript.meeting_type !== "funding_feed" &&
                   !isApproved && (
@@ -940,8 +1035,9 @@ function PipelinePage() {
                                   <ProgramLinkSelect
                                     item={item}
                                     value={linkFor(item)}
-                                    programs={linkablePrograms}
-                                    state={selectedState}
+                                    programs={linkOptions(item).pool}
+                                    newStates={linkOptions(item).newStates}
+                                    dealState={selectedState}
                                     disabled={approveTranscript.isPending}
                                     onChange={(value) =>
                                       setProgramLinks((links) => ({ ...links, [item.id]: value }))

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -19,10 +19,26 @@ import { useRef, useState } from "react";
 import { CoverageMeter } from "@/components/coverage-meter";
 import { DocumentActions, DocumentStatusBadge } from "@/components/document-actions";
 import { ProgramForm } from "@/components/program-form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import type { ProgramNoteRow } from "@/functions/knowledge";
 import { useUploadDocument } from "@/hooks/use-documents";
-import { useDeleteNote, useProgram, useUpdateProgram } from "@/hooks/use-knowledge";
+import {
+  useDeleteNote,
+  useDeleteProgram,
+  useProgram,
+  useUpdateProgram,
+} from "@/hooks/use-knowledge";
 import { stateLabel } from "@/lib/states";
 
 export const Route = createFileRoute("/knowledge-base/$programId")({
@@ -198,6 +214,8 @@ function ProgramDetail() {
   const { programId } = Route.useParams();
   const { data, isLoading, isError, error } = useProgram(programId);
   const updateProgram = useUpdateProgram();
+  const deleteProgram = useDeleteProgram();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
 
   if (isLoading) {
@@ -257,6 +275,37 @@ function ProgramDetail() {
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               <Pencil /> Edit
             </Button>
+          )}
+          {!editing && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-destructive">
+                  <Trash2 /> Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete “{program.name}”?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    The chatbot stops seeing it immediately. Its {notes.length} practitioner note
+                    {notes.length === 1 ? "" : "s"}, contacts and source citations are deleted with
+                    it; uploaded files stay in Documents, unlinked. This can't be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      deleteProgram.mutate(program.id, {
+                        onSuccess: () => navigate({ to: "/knowledge-base" }),
+                      })
+                    }
+                  >
+                    Delete program
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
       </div>

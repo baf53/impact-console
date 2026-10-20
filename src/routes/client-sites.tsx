@@ -32,6 +32,8 @@ import { useIntegrationStatus } from "@/hooks/use-pipeline";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/client-sites")({
+  validateSearch: (search: Record<string, unknown>): { client?: string } =>
+    typeof search["client"] === "string" ? { client: search["client"] } : {},
   head: () => ({
     meta: [
       { title: "Client Sites & Alerts — Collective Impact" },
@@ -194,7 +196,8 @@ function ClientSitesPage() {
   const { data: integration } = useIntegrationStatus();
   const generateReport = useGenerateReport();
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { client: linkedClient } = Route.useSearch();
+  const [selectedId, setSelectedId] = useState<string | null>(linkedClient ?? null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftText, setDraftText] = useState("");
   const [drafting, setDrafting] = useState(false);

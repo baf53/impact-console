@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { candidatePrograms, matchProgram, slugify, stateFromLabel } from "@/lib/states";
+import { NEW_PROGRAM, newProgramLink, parseProgramLink } from "@/lib/pipeline";
+import {
+  candidatePrograms,
+  matchProgram,
+  slugify,
+  stateFromLabel,
+  stateFromProgramName,
+} from "@/lib/states";
 
 const programs = [
   { id: "ok", name: "Oklahoma Increased Housing Program (OHFA)", state: "OK" },
@@ -51,5 +58,33 @@ describe("matchProgram", () => {
 describe("slugify", () => {
   it("produces url-safe ids", () => {
     expect(slugify("Florida SHIP (2026) — Round 2!")).toBe("florida-ship-2026-round-2");
+  });
+});
+
+describe("stateFromProgramName", () => {
+  it("reads a state named in the program", () => {
+    expect(stateFromProgramName("Kansas Moderate Income Housing (MIH)")).toBe("KS");
+    expect(stateFromProgramName("Oklahoma Housing Trust Fund")).toBe("OK");
+    expect(stateFromProgramName("Florida State Housing Initiatives Partnership (SHIP)")).toBe("FL");
+  });
+
+  it("recognises federal programs", () => {
+    expect(stateFromProgramName("Community Development Block Grant (CDBG)")).toBe("Federal");
+    expect(stateFromProgramName("Low-Income Housing Tax Credits")).toBe("Federal");
+    expect(stateFromProgramName("HOME Investment Partnerships Program")).toBe("Federal");
+    expect(stateFromProgramName("USDA Section 515 Rural Rental Housing")).toBe("Federal");
+  });
+
+  it("returns null when the name doesn't say, and ignores the everyday word home", () => {
+    expect(stateFromProgramName("Wichita Housing Trust Fund")).toBeNull();
+    expect(stateFromProgramName("Home repair grant")).toBeNull();
+  });
+});
+
+describe("program links", () => {
+  it("round-trips new-program links and keeps the legacy form", () => {
+    expect(parseProgramLink(newProgramLink("Federal"))).toEqual({ kind: "new", state: "Federal" });
+    expect(parseProgramLink(NEW_PROGRAM)).toEqual({ kind: "new", state: null });
+    expect(parseProgramLink("ok-ohfa-123")).toEqual({ kind: "existing", id: "ok-ohfa-123" });
   });
 });
