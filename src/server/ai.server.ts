@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type, type Schema } from "@google/genai";
 import { z } from "zod";
 
+import { isNetworkError, networkErrorMessage } from "@/server/network.server";
+
 export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
 
 export const EXTRACTION_CATEGORIES = [
@@ -82,7 +84,21 @@ function geminiModel() {
 function geminiClient(missingKeyMessage: string) {
   const apiKey = process.env["GEMINI_API_KEY"];
   if (!apiKey) throw new Error(missingKeyMessage);
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({
+    apiKey,
+    // Retries rate limits, server errors and dropped connections; 2 minutes per attempt.
+    httpOptions: { timeout: 120_000, retryOptions: { attempts: 4, initialDelay: 1, maxDelay: 8 } },
+  });
+}
+
+/** Calls Gemini, replacing a raw connection failure with an actionable message. */
+async function callGemini<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    if (isNetworkError(err)) throw new Error(networkErrorMessage("Gemini"));
+    throw err;
+  }
 }
 
 /** Runs a structured-JSON Gemini call and validates the result with Zod. */
@@ -94,15 +110,17 @@ async function generateJson<T>(opts: {
   validate: z.ZodType<T>;
 }): Promise<T> {
   const ai = geminiClient(`${opts.feature} needs the Gemini API key (GEMINI_API_KEY).`);
-  const response = await ai.models.generateContent({
-    model: geminiModel(),
-    contents: opts.prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: opts.schema,
-      systemInstruction: opts.system,
-    },
-  });
+  const response = await callGemini(() =>
+    ai.models.generateContent({
+      model: geminiModel(),
+      contents: opts.prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: opts.schema,
+        systemInstruction: opts.system,
+      },
+    }),
+  );
   const text = response.text;
   if (!text) throw new Error(`${opts.feature}: Gemini returned an empty response.`);
   let raw: unknown;
@@ -136,16 +154,17 @@ export async function writeStackingAnalysis(input: {
     feature: "Stacking analysis",
     system: `You are a housing-finance analyst at Collective Impact writing the "stacking analysis" section of a client proposal.
 Explain how the listed programs could be layered to fund the project: which program is the senior or largest source, which fill gaps, sequencing and timing risks, and conflicts (for example rent or income restrictions that differ between programs).
-Use ONLY the facts provided. Do not invent dollar amounts, rates, deadlines or rules that are not in the input; when something needs confirming, say so. 2–4 short paragraphs, plain text, no markdown headings.`,
+Use ONLY the facts provided. Do not invent dollar amounts, rates, deadlines or rules that are not in the input; when something needs confirming, say so. Return 2–4 short paragraphs of plain text, one per array item, no markdown.`,
     prompt: JSON.stringify(input, null, 2),
     schema: {
       type: Type.OBJECT,
-      properties: { analysis: { type: Type.STRING } },
-      required: ["analysis"],
+      properties: { paragraphs: { type: Type.ARRAY, items: { type: Type.STRING } } },
+      required: ["paragraphs"],
     },
-    validate: z.object({ analysis: z.string().trim().min(1) }),
+    validate: z.object({ paragraphs: z.array(z.string().trim().min(1)).min(1) }),
   });
-  return result.analysis;
+  // Paragraphs are joined with blank lines; the report view splits on them.
+  return result.paragraphs.join("\n\n");
 }
 
 /* -------------------- grounded answers (preview & golden set) -------------------- */
@@ -230,13 +249,14 @@ export async function extractTranscript(input: {
     ? `Focus subsidy matching on ${input.state} and Federal programs.`
     : "The state is unknown; name the jurisdiction of every subsidy you list.";
 
-  const response = await ai.models.generateContent({
-    model: process.env["GEMINI_MODEL"] || DEFAULT_GEMINI_MODEL,
-    contents: `Project: ${input.label}\nState: ${input.state ?? "Unknown"}\n\nTranscript:\n${input.text}`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema,
-      systemInstruction: `You are an expert in affordable housing finance and state housing subsidies working for Collective Impact.
+  const response = await callGemini(() =>
+    ai.models.generateContent({
+      model: process.env["GEMINI_MODEL"] || DEFAULT_GEMINI_MODEL,
+      contents: `Project: ${input.label}\nState: ${input.state ?? "Unknown"}\n\nTranscript:\n${input.text}`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema,
+        systemInstruction: `You are an expert in affordable housing finance and state housing subsidies working for Collective Impact.
 Analyze the transcript and extract findings into exactly these 5 categories:
 1. pain_point: deal blockers, financing gaps, zoning or site control obstacles.
 2. required_info: quantitative project metrics — unit counts, AMI targets, building type, timeline.
@@ -246,8 +266,9 @@ Analyze the transcript and extract findings into exactly these 5 categories:
 ${MEETING_FOCUS[input.meetingType] ?? ""}
 ${stateFocus}
 Only extract what the transcript supports. Use Medium or Low confidence when something is implied rather than stated.`,
-    },
-  });
+      },
+    }),
+  );
 
   const text = response.text;
   if (!text) throw new Error("Gemini returned an empty response.");

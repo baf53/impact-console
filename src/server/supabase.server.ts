@@ -1,4 +1,5 @@
 import { createClient, type PostgrestError, type SupabaseClient } from "@supabase/supabase-js";
+import { makeFetchWithRetry, networkErrorMessage } from "@/server/network.server";
 import type { Database } from "@/types/database";
 
 let client: SupabaseClient<Database> | null = null;
@@ -28,6 +29,8 @@ export function getServerSupabase(): SupabaseClient<Database> {
 
   client = createClient<Database>(url as string, key as string, {
     auth: { persistSession: false, autoRefreshToken: false },
+    // Brief connection drops are retried instead of failing the operator's action.
+    global: { fetch: makeFetchWithRetry(fetch) },
   });
   return client;
 }
@@ -43,6 +46,9 @@ export function dbError(error: PostgrestError, action: string): Error {
     return new Error(
       `${action}: the database is missing a table or column this feature needs. Run supabase_step3_features.sql in the Supabase SQL Editor.`,
     );
+  }
+  if (/fetch failed|network|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN/i.test(error.message)) {
+    return new Error(`${action}: ${networkErrorMessage("the database")}`);
   }
   const rlsDenied = error.code === "42501" || /row-level security/i.test(error.message);
   const hint =

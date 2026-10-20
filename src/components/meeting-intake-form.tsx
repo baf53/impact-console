@@ -63,7 +63,8 @@ export function MeetingIntakeForm({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const aiReady = status?.gemini ?? false;
+  // Until the status loads, assume AI is on; the server reports clearly if the key is missing.
+  const aiReady = status ? status.gemini : true;
   const registeringClient = isNewClient || clients.length === 0;
 
   const handleSubmit = (e: React.FormEvent) => {

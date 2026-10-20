@@ -40,6 +40,7 @@ describe("matchProgram", () => {
   it("matches on the acronym in parentheses", () => {
     expect(matchProgram("Florida SHIP", programs)?.id).toBe("fl");
     expect(matchProgram("OHFA loan", programs)?.id).toBe("ok");
+    expect(matchProgram("Community Development Block Grant (CDBG)", programs)?.id).toBe("cdbg");
   });
 
   it("returns null when nothing is close", () => {

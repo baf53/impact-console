@@ -71,8 +71,12 @@ function similarity(title: string, programName: string) {
   if (a === b) return 1;
   if (a.length >= 4 && b.length >= 4 && (a.includes(b) || b.includes(a))) return 0.95;
 
+  // An acronym in parentheses on either side, e.g. "Florida SHIP" ↔ "… Partnership (SHIP)"
+  // or "Community Development Block Grant (CDBG)" ↔ "CDBG Small Cities".
   const titleWords = new Set(a.split(" "));
+  const programWords = new Set(b.split(" "));
   if (acronyms(programName).some((acr) => titleWords.has(acr))) return 0.9;
+  if (acronyms(title).some((acr) => programWords.has(acr))) return 0.9;
 
   const ta = tokens(title);
   const tb = tokens(programName);

@@ -747,9 +747,11 @@ function PipelinePage() {
                 : "Granola / Zoom: paste or upload"}
             </StatusDot>
             <StatusDot tone={aiTone}>
-              {integration?.gemini
-                ? `AI extraction ready (${integration.geminiModel})`
-                : "AI extraction: waiting for Gemini key"}
+              {!integration
+                ? "AI extraction: checking…"
+                : integration.gemini
+                  ? `AI extraction ready (${integration.geminiModel})`
+                  : "AI extraction: waiting for Gemini key"}
             </StatusDot>
             <StatusDot
               tone={
