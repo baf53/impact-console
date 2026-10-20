@@ -206,14 +206,24 @@ export function useUpdateExtraction() {
     onMutate: async ({ id, patch }) => {
       await queryClient.cancelQueries({ queryKey: PIPELINE_KEYS.transcripts() });
       const previous = patchTranscripts(queryClient, (list) =>
-        list.map((t) => ({
-          ...t,
-          extractions: t.extractions.map((e) => (e.id === id ? { ...e, ...patch } : e)),
-        })),
+        list.map((t) => {
+          if (!t.extractions.some((e) => e.id === id)) return t;
+          return {
+            ...t,
+            // Mirrors the server: reviewing an Extracted card moves it to In Review.
+            stage: t.stage === "extracted" && t.status !== "approved" ? "in-review" : t.stage,
+            extractions: t.extractions.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+          };
+        }),
       );
       return { previous };
     },
-    onSuccess: (_data, { patch }) => {
+    onSuccess: (result, { patch }) => {
+      if (result.movedToReview) {
+        toast.info("Moved to In Review", {
+          description: "Approve the items you want, then click Approve to send them on.",
+        });
+      }
       if (patch.status) toast.success(PATCH_TOASTS[patch.status]);
       else if (patch.body || patch.title) toast.success("Edit saved");
       else if (patch.routing) toast.success("Routing updated");
@@ -224,7 +234,10 @@ export function useUpdateExtraction() {
       }
       toast.error("Could not update item", { description: errorMessage(err) });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() });
+      invalidateFeeds(queryClient);
+    },
   });
 }
 

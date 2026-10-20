@@ -104,7 +104,11 @@ export const Route = createFileRoute("/pipeline")({
 const stages: { id: PipelineStage; label: string; blurb: string }[] = [
   { id: "intake", label: "Intake", blurb: "Just arrived, not yet processed" },
   { id: "extracted", label: "Extracted", blurb: "AI pulled details, awaiting review" },
-  { id: "in-review", label: "In Review", blurb: "You're reviewing it now" },
+  {
+    id: "in-review",
+    label: "In Review",
+    blurb: "You're reviewing it — cards move here when you approve or reject an item",
+  },
   { id: "approved", label: "Approved", blurb: "Sent to the Knowledge Base" },
 ];
 

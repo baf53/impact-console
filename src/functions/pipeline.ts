@@ -368,14 +368,39 @@ export const updateExtractionFn = createServerFn({ method: "POST" })
     if (data.patch.routing) patch.routing = data.patch.routing;
     if (Object.keys(patch).length === 0) throw new Error("Nothing to update.");
 
-    const { data: updated, error } = await getServerSupabase()
+    const db = getServerSupabase();
+    const { data: updated, error } = await db
       .from("extractions")
       .update(patch)
       .eq("id", data.id)
       .select()
       .single();
     if (error) throw dbError(error, "Could not update item");
-    return updated;
+
+    // The first review action on an Extracted card moves it to In Review. The stage
+    // condition makes this a no-op for cards already in review or approved.
+    let movedToReview = false;
+    if (updated.transcript_id) {
+      const { data: moved, error: moveError } = await db
+        .from("transcripts")
+        .update({ stage: "in-review" })
+        .eq("id", updated.transcript_id)
+        .eq("stage", "extracted")
+        .neq("status", "approved")
+        .select("project_label, organization, meeting_type");
+      if (moveError) console.error("Could not move card to In Review:", moveError.message);
+      const card = moved?.[0];
+      if (card) {
+        movedToReview = true;
+        await logActivity({
+          action: "Review started",
+          subject: shortSubject(card.project_label),
+          detail: `${card.organization} · ${meetingLabel(card.meeting_type)}`,
+          status: "review",
+        });
+      }
+    }
+    return { item: updated, movedToReview };
   });
 
 function noteText(item: ExtractionRow) {
