@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -24,6 +25,25 @@ import { CLIENT_STATES, stateLabel } from "@/lib/states";
 import { TRANSCRIPT_FILE_ACCEPT, readTranscriptFile } from "@/lib/transcript-files";
 
 type ClientState = (typeof CLIENT_STATES)[number];
+
+const AUTO_EXTRACT_KEY = "ci.autoExtract";
+
+/** Whether to start AI extraction right after saving — remembered per browser, on by default. */
+function readAutoExtract() {
+  try {
+    return localStorage.getItem(AUTO_EXTRACT_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+function saveAutoExtract(on: boolean) {
+  try {
+    localStorage.setItem(AUTO_EXTRACT_KEY, on ? "on" : "off");
+  } catch {
+    // Private mode or blocked storage: the choice just isn't remembered.
+  }
+}
 
 export function MeetingIntakeForm({ onClose }: { onClose: () => void }) {
   const { data: clients = [], isLoading: clientsLoading } = useClients();
@@ -65,6 +85,8 @@ export function MeetingIntakeForm({ onClose }: { onClose: () => void }) {
 
   // Until the status loads, assume AI is on; the server reports clearly if the key is missing.
   const aiReady = status ? status.gemini : true;
+  const [autoExtract, setAutoExtract] = useState(readAutoExtract);
+  const extractNow = aiReady && autoExtract;
   const registeringClient = isNewClient || clients.length === 0;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -94,7 +116,11 @@ export function MeetingIntakeForm({ onClose }: { onClose: () => void }) {
       {
         onSuccess: (transcript) => {
           onClose();
-          if (aiReady) runExtraction.mutate(transcript.id);
+          if (extractNow) runExtraction.mutate(transcript.id);
+          else if (aiReady)
+            toast.info("Waiting in Intake", {
+              description: "Open the card and click Run AI extraction when you're ready.",
+            });
           else
             toast.info("AI extraction is waiting for the Gemini API key", {
               description: "Run it from the card once the key is added.",
@@ -301,14 +327,26 @@ export function MeetingIntakeForm({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 md:col-span-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Sparkles className="size-3.5 text-primary" aria-hidden="true" />
-              <span>
-                {aiReady
-                  ? "AI extraction runs automatically after saving."
-                  : "Saved to Intake now — AI extraction runs once the Gemini key is added."}
-              </span>
-            </div>
+            {aiReady ? (
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={autoExtract}
+                  onCheckedChange={(checked) => {
+                    const on = checked === true;
+                    setAutoExtract(on);
+                    saveAutoExtract(on);
+                  }}
+                  aria-label="Run AI extraction right after saving"
+                />
+                <Sparkles className="size-3.5 text-primary" aria-hidden="true" />
+                Run AI extraction right after saving
+              </label>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Sparkles className="size-3.5 text-primary" aria-hidden="true" />
+                <span>Saved to Intake now — AI extraction runs once the Gemini key is added.</span>
+              </div>
+            )}
             <div className="flex gap-2">
               <Button type="button" variant="ghost" onClick={onClose} disabled={ingest.isPending}>
                 Cancel
@@ -316,7 +354,7 @@ export function MeetingIntakeForm({ onClose }: { onClose: () => void }) {
               <Button type="submit" disabled={ingest.isPending || !rawText.trim()}>
                 {ingest.isPending
                   ? "Saving…"
-                  : aiReady
+                  : extractNow
                     ? "Ingest & run AI extraction"
                     : "Ingest transcript"}
               </Button>

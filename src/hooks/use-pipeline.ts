@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { STAGE_LABELS, type ExtractionRow, type TranscriptWithExtractions } from "@/lib/pipeline";
+import {
+  STAGE_LABELS,
+  type ExtractionRow,
+  type TranscriptRow,
+  type TranscriptWithExtractions,
+} from "@/lib/pipeline";
 import {
   approveTranscriptFn,
   assignTranscriptFn,
@@ -64,7 +69,22 @@ export function useClients() {
 }
 
 export function useTranscripts() {
-  return useQuery({ queryKey: PIPELINE_KEYS.transcripts(), queryFn: () => listTranscriptsFn() });
+  return useQuery({
+    queryKey: PIPELINE_KEYS.transcripts(),
+    queryFn: () => listTranscriptsFn(),
+    // While an AI extraction runs, keep the board current (also after a page reload).
+    refetchInterval: (query) =>
+      query.state.data?.some((t) => t.status === "extracting") ? 5_000 : false,
+  });
+}
+
+/** Puts a just-saved transcript on the board at once, before the list refetch returns. */
+function addToBoard(queryClient: QueryClient, transcript: TranscriptRow) {
+  queryClient.setQueryData<TranscriptWithExtractions[]>(PIPELINE_KEYS.transcripts(), (list) =>
+    list && !list.some((t) => t.id === transcript.id)
+      ? [{ ...transcript, extractions: [] }, ...list]
+      : list,
+  );
 }
 
 export function usePrograms() {
@@ -79,6 +99,7 @@ export function useIngestTranscript() {
     mutationFn: (data: Parameters<typeof ingestTranscriptFn>[0]["data"]) =>
       ingestTranscriptFn({ data }),
     onSuccess: (transcript) => {
+      addToBoard(queryClient, transcript);
       queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() });
       queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.clients() });
       invalidateFeeds(queryClient);
@@ -96,7 +117,8 @@ export function useCreateOpportunity() {
   return useMutation({
     mutationFn: (data: Parameters<typeof createOpportunityFn>[0]["data"]) =>
       createOpportunityFn({ data }),
-    onSuccess: () => {
+    onSuccess: (transcript) => {
+      addToBoard(queryClient, transcript);
       queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() });
       invalidateFeeds(queryClient);
       toast.success("Added to Intake", {
@@ -116,6 +138,9 @@ export function useRunExtraction() {
       const previous = patchTranscripts(queryClient, (list) =>
         list.map((t) => (t.id === transcriptId ? { ...t, status: "extracting" } : t)),
       );
+      toast.info("AI extraction started", {
+        description: "The card moves to Extracted when it's done — usually under a minute.",
+      });
       return { previous };
     },
     onSuccess: (result) => {
