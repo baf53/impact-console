@@ -10,6 +10,7 @@ import {
 import {
   approveTranscriptFn,
   assignTranscriptFn,
+  deleteTranscriptFn,
   createOpportunityFn,
   getIntegrationStatusFn,
   ingestTranscriptFn,
@@ -265,5 +266,30 @@ export function useAssignTranscript() {
     },
     onError: (err) =>
       toast.error("Could not assign transcript", { description: errorMessage(err) }),
+  });
+}
+
+export function useDeleteTranscript() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteTranscriptFn({ data: { id } }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: PIPELINE_KEYS.transcripts() });
+      const previous = patchTranscripts(queryClient, (list) => list.filter((t) => t.id !== id));
+      return { previous };
+    },
+    onSuccess: () => toast.success("Transcript deleted"),
+    onError: (err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(PIPELINE_KEYS.transcripts(), context.previous);
+      }
+      toast.error("Could not delete transcript", { description: errorMessage(err) });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() });
+      // A deleted Grants.gov card becomes available in the feed again.
+      queryClient.invalidateQueries({ queryKey: ["grants-feed"] });
+      invalidateFeeds(queryClient);
+    },
   });
 }

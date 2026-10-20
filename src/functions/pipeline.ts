@@ -594,3 +594,26 @@ export const assignTranscriptFn = createServerFn({ method: "POST" })
     });
     return updated;
   });
+
+/**
+ * Deletes a transcript and its extracted items. Knowledge already approved into the
+ * Knowledge Base stays there; remove it from the program page if it should go too.
+ */
+export const deleteTranscriptFn = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    const transcript = await getTranscript(data.id);
+    if (transcript.status === "extracting") {
+      throw new Error("AI extraction is still running on this transcript — wait for it to finish.");
+    }
+    const { error } = await getServerSupabase().from("transcripts").delete().eq("id", data.id);
+    if (error) throw dbError(error, "Could not delete transcript");
+
+    await logActivity({
+      action: "Transcript deleted",
+      subject: shortSubject(transcript.project_label),
+      detail: `${transcript.organization} · ${meetingLabel(transcript.meeting_type)}`,
+      status: "updated",
+    });
+    return { id: data.id };
+  });

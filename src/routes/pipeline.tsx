@@ -12,6 +12,7 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Undo2,
   X,
 } from "lucide-react";
@@ -21,6 +22,17 @@ import { toast } from "sonner";
 import { AssignTranscript } from "@/components/assign-transcript";
 import { GrantsFeed } from "@/components/grants-feed";
 import { MeetingIntakeForm } from "@/components/meeting-intake-form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +51,7 @@ import {
   useApproveTranscript,
   useClients,
   useCreateOpportunity,
+  useDeleteTranscript,
   useIntegrationStatus,
   usePrograms,
   useRunExtraction,
@@ -709,8 +722,10 @@ function PipelinePage() {
   const approveTranscript = useApproveTranscript();
   const updateExtraction = useUpdateExtraction();
   const runExtraction = useRunExtraction();
+  const deleteTranscript = useDeleteTranscript();
 
-  const [selected, setSelected] = useState<CardRef | null>(null);
+  // undefined = nothing chosen yet (show the newest card); null = the panel was closed.
+  const [selected, setSelected] = useState<CardRef | null | undefined>(undefined);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [dragging, setDragging] = useState<CardRef | null>(null);
@@ -719,7 +734,11 @@ function PipelinePage() {
 
   const firstTranscript = liveTranscripts[0];
   const effective: CardRef | null =
-    selected ?? (firstTranscript ? { kind: "transcript", id: firstTranscript.id } : null);
+    selected === undefined
+      ? firstTranscript
+        ? { kind: "transcript", id: firstTranscript.id }
+        : null
+      : selected;
   const isSelected = (ref: CardRef) => effective?.kind === ref.kind && effective.id === ref.id;
 
   const selectedTranscript =
@@ -982,14 +1001,53 @@ function PipelinePage() {
                       · {approvedItems.length} of {items.length} items approved
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSelected(null)}
-                    aria-label="Close detail panel"
-                  >
-                    <X className="size-4" />
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive"
+                          disabled={
+                            selectedTranscript.status === "extracting" || deleteTranscript.isPending
+                          }
+                          aria-label="Delete transcript"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this transcript?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            The transcript and its {items.length} extracted item
+                            {items.length === 1 ? "" : "s"} are deleted. This can't be undone.
+                            {isApproved &&
+                              " Notes it already sent to the Knowledge Base stay there — remove them from the program page if they should go too."}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              deleteTranscript.mutate(selectedTranscript.id);
+                              setSelected(null);
+                            }}
+                          >
+                            Delete transcript
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelected(null)}
+                      aria-label="Close detail panel"
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 {isApproved && (
