@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
-import { CheckCircle2, CircleAlert, FileText, LibraryBig, type LucideIcon } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  CircleAlert,
+  FileText,
+  LibraryBig,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useDashboard } from "@/hooks/use-knowledge";
@@ -54,81 +61,112 @@ const statusStyles = {
 
 type Integration = { label: string; ok: boolean | undefined; on: string; off: string };
 
+function IntegrationList({
+  items,
+  optional,
+  checking,
+}: {
+  items: Integration[];
+  optional: boolean;
+  checking: boolean;
+}) {
+  return (
+    <ul className="divide-y border bg-card">
+      {items.map((item) => (
+        <li key={item.label} className="flex items-start gap-3 px-5 py-3">
+          {item.ok ? (
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-label="Done" />
+          ) : optional ? (
+            <Circle
+              className="mt-0.5 size-4 shrink-0 text-muted-foreground/60"
+              aria-label="Not set up"
+            />
+          ) : (
+            <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-label="Needs setup" />
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">{item.label}</p>
+            <p className="text-xs leading-5 text-muted-foreground">
+              {checking ? "Checking…" : item.ok ? item.on : item.off}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function SetupChecklist() {
   const { data } = useIntegrationStatus();
-  const items: Integration[] = [
+  const required: Integration[] = [
     {
       label: "Secure database access",
       ok: data?.supabaseSecretKey,
       on: "Server uses the secret key",
-      off: "Add SUPABASE_SECRET_KEY, then run supabase_step2_security.sql",
+      off: "Add SUPABASE_SECRET_KEY to the server settings",
     },
     {
       label: "Feature tables",
       ok: data?.step3Migration,
       on: "Answer Log, Golden Set and Grants.gov tables ready",
-      off: "Run supabase_step3_features.sql",
+      off: "Run supabase_step3_features.sql in the Supabase SQL Editor",
     },
     {
       label: "AI (Gemini)",
       ok: data?.gemini,
       on: `Extraction, previews and report analysis on (${data?.geminiModel ?? ""})`,
-      off: "Add GEMINI_API_KEY",
+      off: "Add GEMINI_API_KEY to the server settings",
     },
+  ];
+  const optional: Integration[] = [
     {
       label: "Client alert emails",
       ok: data?.email,
-      on: "Alerts are sent through Resend",
-      off: "Optional: add RESEND_API_KEY and ALERT_FROM_EMAIL (until then alerts open in your email app)",
+      on: "Alerts are emailed to clients from the console",
+      off: "Not set up — approved alerts open in your own email app instead. Needs a Resend account with your email domain verified.",
     },
     {
       label: "Zoom auto-import",
       ok: data?.zoomWebhook,
-      on: "Finished Zoom transcripts arrive in Intake",
-      off: "Optional: add ZOOM_WEBHOOK_SECRET_TOKEN (see docs/integrations.md)",
+      on: "Finished Zoom transcripts arrive in Intake automatically",
+      off: "Not set up — paste or upload Zoom transcripts instead. Needs a paid Zoom plan with cloud recording and the console online.",
     },
     {
-      label: "Granola / webhook import",
+      label: "Granola auto-import",
       ok: data?.ingestWebhook,
-      on: "Transcripts can be posted to /api/ingest/transcript",
-      off: "Optional: add INGEST_WEBHOOK_SECRET (see docs/integrations.md)",
+      on: "Transcripts sent by an automation arrive in Intake automatically",
+      off: "Not set up — paste or upload Granola notes instead. Needs an automation tool (Zapier or Make) and the console online.",
     },
     {
       label: "Chatbot answer logging",
       ok: data?.chatbotLog,
-      on: "The chatbot can log answers to /api/chatbot/answers",
-      off: "Optional: add CHATBOT_LOG_SECRET and share it with the chatbot team",
+      on: "The chatbot's answers arrive in the Answer Log",
+      off: "Not set up — turn it on once the chatbot team connects the chatbot.",
     },
   ];
+  const checking = data === undefined;
 
   return (
-    <section className="mt-10">
-      <div className="mb-4">
-        <h2 className="text-base font-semibold text-foreground">Setup</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          What's connected, and what each remaining item needs.
-        </p>
+    <section className="mt-10 space-y-6">
+      <div>
+        <div className="mb-4">
+          <h2 className="text-base font-semibold text-foreground">Setup</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            What the console needs to work. Every item here should be ticked.
+          </p>
+        </div>
+        <IntegrationList items={required} optional={false} checking={checking} />
       </div>
-      <ul className="divide-y border bg-card">
-        {items.map((item) => (
-          <li key={item.label} className="flex items-start gap-3 px-5 py-3">
-            {item.ok ? (
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-label="Done" />
-            ) : (
-              <CircleAlert
-                className="mt-0.5 size-4 shrink-0 text-warning"
-                aria-label="Not set up"
-              />
-            )}
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{item.label}</p>
-              <p className="text-xs text-muted-foreground">
-                {data === undefined ? "Checking…" : item.ok ? item.on : item.off}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div>
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-foreground">Optional extras</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Connections to outside services. The console works fully without them; setup steps are
+            in docs/integrations.md.
+          </p>
+        </div>
+        <IntegrationList items={optional} optional checking={checking} />
+      </div>
     </section>
   );
 }
