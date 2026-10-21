@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -8,24 +8,54 @@ import {
   Mail,
   MessageSquareQuote,
   Paperclip,
+  Pencil,
   Phone,
+  Trash2,
   Upload,
   User,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import { toast } from "sonner";
 
+import { CoverageMeter } from "@/components/coverage-meter";
+import { DocumentActions, DocumentStatusBadge } from "@/components/document-actions";
+import { ProgramForm } from "@/components/program-form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { consoleStore, useConsoleData, type KnowledgeProgram } from "@/lib/mock-data";
-import { CoverageMeter } from "./knowledge-base.index";
+import type { ProgramNoteRow } from "@/functions/knowledge";
+import { useUploadDocument } from "@/hooks/use-documents";
+import {
+  useDeleteNote,
+  useDeleteProgram,
+  useProgram,
+  useUpdateProgram,
+} from "@/hooks/use-knowledge";
+import { stateLabel } from "@/lib/states";
 
 export const Route = createFileRoute("/knowledge-base/$programId")({
   head: () => ({
     meta: [
       { title: "Program detail — Knowledge Base" },
-      { name: "description", content: "Source documents, practitioner knowledge, contacts, and forms for a funding program." },
+      {
+        name: "description",
+        content:
+          "Source documents, practitioner knowledge, contacts, and forms for a funding program.",
+      },
       { property: "og:title", content: "Program detail — Knowledge Base" },
-      { property: "og:description", content: "Source documents, practitioner knowledge, contacts, and forms for a funding program." },
+      {
+        property: "og:description",
+        content:
+          "Source documents, practitioner knowledge, contacts, and forms for a funding program.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -38,25 +68,32 @@ function Section({
   description,
   icon: Icon,
   count,
+  action,
   children,
 }: {
   title: string;
   description: string;
   icon: typeof BookOpen;
   count?: number;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="border bg-card">
-      <div className="flex items-start gap-2.5 border-b px-5 py-3.5">
-        <Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">
-            {title}
-            {count !== undefined && <span className="ml-1.5 font-normal text-muted-foreground">({count})</span>}
-          </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+      <div className="flex items-start justify-between gap-3 border-b px-5 py-3.5">
+        <div className="flex items-start gap-2.5">
+          <Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">
+              {title}
+              {count !== undefined && (
+                <span className="ml-1.5 font-normal text-muted-foreground">({count})</span>
+              )}
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+          </div>
         </div>
+        {action}
       </div>
       <div className="px-5 py-4">{children}</div>
     </section>
@@ -73,25 +110,21 @@ function EmptyState({ label, hint }: { label: string; hint: string }) {
   );
 }
 
-function UploadArea({ program }: { program: KnowledgeProgram }) {
+function UploadArea({ programId }: { programId: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const upload = useUploadDocument();
 
   function addFiles(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    const added = Array.from(files).map((file, index) => ({
-      id: `att-${Date.now()}-${index}`,
-      name: file.name,
-      type: /check/i.test(file.name) ? "Checklist" : "Application form",
-      size: `${Math.max(1, Math.round(file.size / 1024))} KB`,
-    }));
-    consoleStore.update((current) => ({
-      ...current,
-      programsLibrary: current.programsLibrary.map((p) =>
-        p.id === program.id ? { ...p, attachments: [...p.attachments, ...added] } : p,
-      ),
-    }));
-    toast.success(`${added.length} file${added.length > 1 ? "s" : ""} attached to ${program.name}`);
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      upload.mutate({
+        file,
+        title: file.name.replace(/\.[^.]+$/, ""),
+        type: /check/i.test(file.name) ? "Checklist" : "Application form",
+        programId,
+      });
+    }
   }
 
   return (
@@ -111,9 +144,19 @@ function UploadArea({ program }: { program: KnowledgeProgram }) {
       }`}
     >
       <Upload className="size-5 text-muted-foreground" aria-hidden="true" />
-      <p className="mt-3 text-sm font-medium text-foreground">Attach application forms or checklists</p>
-      <p className="mt-1 text-xs text-muted-foreground">Drag files here, or browse. PDF, DOCX, XLSX.</p>
-      <Button variant="outline" size="sm" className="mt-3" onClick={() => inputRef.current?.click()}>
+      <p className="mt-3 text-sm font-medium text-foreground">
+        {upload.isPending ? "Uploading…" : "Attach application forms or checklists"}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Drag files here, or browse. PDF, DOCX, XLSX — up to 50 MB.
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        className="mt-3"
+        disabled={upload.isPending}
+        onClick={() => inputRef.current?.click()}
+      >
         Browse files
       </Button>
       <input
@@ -121,6 +164,7 @@ function UploadArea({ program }: { program: KnowledgeProgram }) {
         type="file"
         multiple
         className="hidden"
+        aria-label="Attach files"
         onChange={(e) => {
           addFiles(e.target.files);
           e.target.value = "";
@@ -130,13 +174,77 @@ function UploadArea({ program }: { program: KnowledgeProgram }) {
   );
 }
 
+function NoteItem({ note }: { note: ProgramNoteRow }) {
+  const deleteNote = useDeleteNote();
+  return (
+    <li className="border bg-background px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="whitespace-pre-line text-sm leading-6 text-foreground">{note.text}</p>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0"
+          disabled={deleteNote.isPending}
+          onClick={() => {
+            if (window.confirm("Remove this note from the Knowledge Base?")) {
+              deleteNote.mutate(note.id);
+            }
+          }}
+          aria-label="Remove note"
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {note.source_call ? (
+          <>
+            From <span className="font-medium text-foreground">{note.source_call}</span>
+          </>
+        ) : (
+          "Added manually"
+        )}
+        {note.call_date && ` · ${note.call_date}`} · {note.state} ·{" "}
+        {note.routing === "site-level" ? "Site-level" : "Program-level"}
+      </p>
+    </li>
+  );
+}
+
 function ProgramDetail() {
   const { programId } = Route.useParams();
-  const data = useConsoleData();
-  const program = data.programsLibrary.find((p) => p.id === programId);
+  const { data, isLoading, isError, error } = useProgram(programId);
+  const updateProgram = useUpdateProgram();
+  const deleteProgram = useDeleteProgram();
+  const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
 
-  if (!program) throw notFound();
+  if (isLoading) {
+    return (
+      <main className="mx-auto w-full max-w-4xl px-5 py-8 text-sm text-muted-foreground md:px-8 md:py-10">
+        Loading program…
+      </main>
+    );
+  }
 
+  if (isError || !data) {
+    return (
+      <main className="mx-auto w-full max-w-4xl px-5 py-8 md:px-8 md:py-10">
+        <Link
+          to="/knowledge-base"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden="true" /> Knowledge Base
+        </Link>
+        <p className="mt-6 text-sm text-foreground">
+          {isError
+            ? (error as Error).message
+            : "This program doesn't exist (it may have been removed)."}
+        </p>
+      </main>
+    );
+  }
+
+  const { program, notes, contacts, documents, attachments } = data;
   const thin = program.coverage < 25;
 
   return (
@@ -152,14 +260,53 @@ function ProgramDetail() {
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">{program.name}</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {program.administrator} · {program.level} · {program.jurisdiction}
+            {program.administrator} · {program.level} · {program.jurisdiction} ·{" "}
+            <span className="font-medium text-foreground">{stateLabel(program.state)}</span>
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-xs font-medium text-muted-foreground">Coverage</p>
-          <div className="mt-1 flex justify-end">
-            <CoverageMeter value={program.coverage} />
+        <div className="flex items-end gap-4">
+          <div className="text-right">
+            <p className="text-xs font-medium text-muted-foreground">Coverage</p>
+            <div className="mt-1 flex justify-end">
+              <CoverageMeter value={program.coverage} />
+            </div>
           </div>
+          {!editing && (
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+              <Pencil /> Edit
+            </Button>
+          )}
+          {!editing && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-destructive">
+                  <Trash2 /> Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete “{program.name}”?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    The chatbot stops seeing it immediately. Its {notes.length} practitioner note
+                    {notes.length === 1 ? "" : "s"}, contacts and source citations are deleted with
+                    it; uploaded files stay in Documents, unlinked. This can't be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() =>
+                      deleteProgram.mutate(program.id, {
+                        onSuccess: () => navigate({ to: "/knowledge-base" }),
+                      })
+                    }
+                  >
+                    Delete program
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
 
@@ -167,40 +314,81 @@ function ProgramDetail() {
         <div className="mt-5 flex items-start gap-3 border border-warning/40 bg-warning/10 px-4 py-3">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
           <p className="text-xs leading-5 text-foreground">
-            <span className="font-medium">Thin — needs practitioner review.</span> This program has little approved
-            source material. The assistant will answer cautiously until documents and notes are added.
+            <span className="font-medium">Thin — needs practitioner review.</span> This program has
+            little approved source material. Confirm the administrator, funds, and eligibility, then
+            raise its coverage.
           </p>
         </div>
       )}
 
       <div className="mt-6 space-y-5">
-        <Section title="Overview" description="What it funds and who administers it." icon={BookOpen}>
-          <p className="text-sm font-medium text-foreground">{program.funds}</p>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{program.overview}</p>
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {program.cities.map((city) => (
-              <span key={city} className="rounded-full border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
-                Loaded for {city}
-              </span>
-            ))}
-          </div>
-        </Section>
+        {editing ? (
+          <section className="border bg-card p-5">
+            <h2 className="mb-4 text-sm font-semibold text-foreground">Edit program</h2>
+            <ProgramForm
+              program={program}
+              submitLabel="Save changes"
+              pending={updateProgram.isPending}
+              onCancel={() => setEditing(false)}
+              onSubmit={(fields) =>
+                updateProgram.mutate(
+                  { id: program.id, fields },
+                  { onSuccess: () => setEditing(false) },
+                )
+              }
+            />
+          </section>
+        ) : (
+          <Section
+            title="Overview"
+            description="What it funds and who administers it."
+            icon={BookOpen}
+          >
+            <p className="text-sm font-medium text-foreground">{program.funds}</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{program.overview}</p>
+            {program.eligibility_criteria && (
+              <div className="mt-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Eligibility
+                </p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {program.eligibility_criteria}
+                </p>
+              </div>
+            )}
+            {program.cities.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {program.cities.map((city) => (
+                  <span
+                    key={city}
+                    className="rounded-full border bg-background px-2.5 py-0.5 text-xs text-muted-foreground"
+                  >
+                    Loaded for {city}
+                  </span>
+                ))}
+              </div>
+            )}
+          </Section>
+        )}
 
         <Section
           title="Source documents"
           description="Regulations, Consolidated Plans, and Annual Action Plans behind this program."
           icon={FileText}
-          count={program.documents.length}
+          count={documents.length}
         >
-          {program.documents.length === 0 ? (
+          {documents.length === 0 ? (
             <EmptyState
               label="No approved source documents"
-              hint="Nothing has been approved into this program yet. Add regulations or plan documents so the assistant can cite them."
+              hint="Nothing has been approved into this program yet. Upload regulations or plan documents in the Documents tab and link them to this program."
             />
           ) : (
             <ul className="divide-y">
-              {program.documents.map((doc) => (
-                <li key={doc.id} className="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+              {documents.map((doc) => (
+                <li
+                  key={doc.id}
+                  className="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                >
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">{doc.title}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
@@ -208,7 +396,7 @@ function ProgramDetail() {
                     </p>
                   </div>
                   <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                    <CircleCheck className="size-3" aria-hidden="true" /> Approved {doc.approvedOn}
+                    <CircleCheck className="size-3" aria-hidden="true" /> Approved {doc.approved_on}
                   </span>
                 </li>
               ))}
@@ -220,23 +408,17 @@ function ProgramDetail() {
           title="Practitioner knowledge"
           description="Human-supplied notes, traced back to the call they came from."
           icon={MessageSquareQuote}
-          count={program.notes.length}
+          count={notes.length}
         >
-          {program.notes.length === 0 ? (
+          {notes.length === 0 ? (
             <EmptyState
               label="No practitioner knowledge yet"
-              hint="Approve notes in Review & Approve to fill in the expertise that isn't written down in any document."
+              hint="Approve subsidy items in the Pipeline and link them to this program to fill in the expertise that isn't written down in any document."
             />
           ) : (
             <ul className="space-y-3">
-              {program.notes.map((note) => (
-                <li key={note.id} className="border bg-background px-4 py-3">
-                  <p className="text-sm leading-6 text-foreground">{note.text}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    From <span className="font-medium text-foreground">{note.sourceCall}</span> · {note.callDate} ·{" "}
-                    {note.routing === "program-level" ? "Program-level" : "Site-level"}
-                  </p>
-                </li>
+              {notes.map((note) => (
+                <NoteItem key={note.id} note={note} />
               ))}
             </ul>
           )}
@@ -246,17 +428,20 @@ function ProgramDetail() {
           title="Contacts"
           description="People who administer or gatekeep this program."
           icon={User}
-          count={program.contacts.length}
+          count={contacts.length}
         >
-          {program.contacts.length === 0 ? (
+          {contacts.length === 0 ? (
             <EmptyState
               label="No contacts recorded"
-              hint="Contacts appear here once they're approved from a call transcript."
+              hint="Program contacts will appear here once they're captured."
             />
           ) : (
             <ul className="divide-y">
-              {program.contacts.map((contact) => (
-                <li key={contact.id} className="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
+              {contacts.map((contact) => (
+                <li
+                  key={contact.id}
+                  className="flex flex-wrap items-start justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                >
                   <div>
                     <p className="text-sm font-medium text-foreground">{contact.name}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
@@ -283,26 +468,36 @@ function ProgramDetail() {
 
         <Section
           title="Attached forms & checklists"
-          description="Application packets and internal checklists for this program."
+          description="Application packets and checklists, stored in Supabase Storage."
           icon={Paperclip}
-          count={program.attachments.length}
+          count={attachments.length}
         >
-          {program.attachments.length > 0 && (
+          {attachments.length > 0 && (
             <ul className="divide-y">
-              {program.attachments.map((file) => (
-                <li key={file.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0">
+              {attachments.map((file) => (
+                <li
+                  key={file.id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-2.5 first:pt-0"
+                >
                   <span className="flex min-w-0 items-center gap-2">
-                    <Paperclip className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                    <span className="truncate text-sm text-foreground">{file.name}</span>
+                    <Paperclip
+                      className="size-3.5 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-foreground">{file.title}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {file.type} · {file.file_name}
+                      </span>
+                    </span>
+                    <DocumentStatusBadge status={file.status} />
                   </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {file.type} · {file.size}
-                  </span>
+                  <DocumentActions doc={file} />
                 </li>
               ))}
             </ul>
           )}
-          <UploadArea program={program} />
+          <UploadArea programId={program.id} />
         </Section>
       </div>
     </main>
