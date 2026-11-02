@@ -1,6 +1,6 @@
 # Integrations and settings
 
-Every external service the console uses is switched on by an environment variable. Locally they go in `.env`. For the deployed console, add them in Lovable's environment settings. The Dashboard's **Setup** list shows which ones are active.
+Every external service the console uses is switched on by an environment variable. Locally they go in `.env`. For the deployed console, add them in Vercel → the project's Settings → Environment Variables, then redeploy. The Dashboard's **Setup** list shows which ones are active.
 
 | Variable | Needed for | Required? |
 | --- | --- | --- |
