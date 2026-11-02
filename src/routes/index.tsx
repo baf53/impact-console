@@ -161,8 +161,7 @@ function SetupChecklist() {
         <div className="mb-4">
           <h3 className="text-sm font-semibold text-foreground">Optional extras</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Connections to outside services. The console works fully without them; setup steps are
-            in docs/integrations.md.
+            Connections to outside services. The console works fully without them.
           </p>
         </div>
         <IntegrationList items={optional} optional checking={checking} />
