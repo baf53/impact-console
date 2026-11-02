@@ -129,13 +129,13 @@ function SetupChecklist() {
       label: "Zoom auto-import",
       ok: data?.zoomWebhook,
       on: "Finished Zoom transcripts arrive in Intake automatically",
-      off: "Not set up — paste or upload Zoom transcripts instead. Needs a paid Zoom plan with cloud recording and the console online.",
+      off: "Ready to connect — finished Zoom calls can land in Intake on their own. Needs a paid Zoom plan with cloud recording. Until then, paste or upload transcripts.",
     },
     {
       label: "Granola auto-import",
       ok: data?.ingestWebhook,
       on: "Transcripts sent by an automation arrive in Intake automatically",
-      off: "Not set up — paste or upload Granola notes instead. Needs an automation tool (Zapier or Make) and the console online.",
+      off: "Ready to connect — Granola notes can land in Intake on their own through Zapier. Until then, paste or upload notes.",
     },
     {
       label: "Chatbot answer logging",
