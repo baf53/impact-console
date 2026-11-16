@@ -98,6 +98,65 @@ export const listTranscriptsFn = createServerFn({ method: "GET" }).handler(
   },
 );
 
+export type Arrival = Pick<
+  TranscriptRow,
+  "id" | "source" | "project_label" | "client_id" | "created_at"
+>;
+
+/**
+ * Calls that arrived on their own (Zoom, or a webhook such as Granola via Zapier) after
+ * `since`, plus how many cards wait in Intake. Automatic imports always carry an external
+ * id; Grants.gov cards and transcripts added in the console don't count as arrivals.
+ */
+export const listArrivalsFn = createServerFn({ method: "GET" })
+  .validator(
+    z.object({
+      since: z
+        .string()
+        .refine((value) => !Number.isNaN(Date.parse(value)))
+        .nullable(),
+    }),
+  )
+  .handler(
+    async ({ data }): Promise<{ cursor: string; arrivals: Arrival[]; intakeCount: number }> => {
+      const db = getServerSupabase();
+      const [intake, recent] = await Promise.all([
+        db.from("transcripts").select("id", { count: "exact", head: true }).eq("stage", "intake"),
+        data.since
+          ? db
+              .from("transcripts")
+              .select("id, source, project_label, client_id, created_at")
+              .gt("created_at", data.since)
+              .not("external_id", "is", null)
+              .not("external_id", "like", "grants.gov:%")
+              .order("created_at", { ascending: true })
+              .limit(20)
+          : // First check from this browser: start after the newest card so older calls
+            // aren't announced.
+            db
+              .from("transcripts")
+              .select("id, source, project_label, client_id, created_at")
+              .order("created_at", { ascending: false })
+              .limit(1),
+      ]);
+      if (intake.error) throw dbError(intake.error, "Could not count Intake");
+      if (recent.error) throw dbError(recent.error, "Could not check for new calls");
+
+      if (!data.since) {
+        return {
+          cursor: recent.data[0]?.created_at ?? new Date(0).toISOString(),
+          arrivals: [],
+          intakeCount: intake.count ?? 0,
+        };
+      }
+      return {
+        cursor: recent.data.at(-1)?.created_at ?? data.since,
+        arrivals: recent.data,
+        intakeCount: intake.count ?? 0,
+      };
+    },
+  );
+
 export const listProgramsFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<ProgramRow[]> => {
     const { data, error } = await getServerSupabase()

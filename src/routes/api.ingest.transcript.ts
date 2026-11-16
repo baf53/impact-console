@@ -45,9 +45,9 @@ export const Route = createFileRoute("/api/ingest/transcript")({
             clientId: body.client_id ?? null,
             clientEmail: body.client_email ?? null,
             callDate: body.call_date ?? null,
-            externalId: body.external_id
-              ? `${body.source.toLowerCase()}:${body.external_id}`
-              : null,
+            // Every automatic import carries an external id, so the console can tell it
+            // apart and announce it; a sender-supplied id also stops duplicates.
+            externalId: `${body.source.toLowerCase()}:${body.external_id ?? `auto-${crypto.randomUUID()}`}`,
           });
           return json(
             {

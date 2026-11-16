@@ -22,6 +22,7 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -30,6 +31,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useArrivals } from "@/hooks/use-pipeline";
 
 const navItems = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },
@@ -74,6 +76,7 @@ function ThemeToggle() {
 function AppSidebar() {
   const currentPath = useRouterState({ select: (state) => state.location.pathname });
   const { setOpenMobile } = useSidebar();
+  const intakeCount = useArrivals();
 
   return (
     <Sidebar collapsible="icon">
@@ -105,6 +108,14 @@ function AppSidebar() {
                       <span>{item.label}</span>
                     </Link>
                   </SidebarMenuButton>
+                  {item.to === "/pipeline" && intakeCount > 0 && (
+                    <SidebarMenuBadge
+                      className="bg-primary text-primary-foreground peer-data-[active=true]/menu-button:text-primary-foreground"
+                      aria-label={`${intakeCount} waiting in Intake`}
+                    >
+                      {intakeCount}
+                    </SidebarMenuBadge>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
