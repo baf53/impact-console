@@ -60,6 +60,7 @@ export const Route = createFileRoute("/api/webhooks/zoom")({
             text: parseTimedTranscript(vtt) || vtt,
             callDate: meeting.start_time ?? null,
             externalId: `zoom:${meeting.uuid}`,
+            hostEmail: meeting.host_email ?? null,
           });
           return json({ ok: true, transcriptId: transcript.id, duplicate });
         } catch (err) {

@@ -55,6 +55,8 @@ export type Database = {
           stage: "intake" | "extracted" | "in-review" | "approved";
           raw_text: string;
           external_id: string | null;
+          // Absent until supabase_step3_features.sql is re-run.
+          client_matched_by?: "meeting_name" | null;
           created_at: string;
         };
         Insert: {
@@ -70,6 +72,7 @@ export type Database = {
           stage?: "intake" | "extracted" | "in-review" | "approved";
           raw_text: string;
           external_id?: string | null;
+          client_matched_by?: "meeting_name" | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["transcripts"]["Insert"]>;

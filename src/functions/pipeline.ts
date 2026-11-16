@@ -52,13 +52,18 @@ function shortSubject(label: string) {
 /* --------------------------------- reads --------------------------------- */
 
 export const getIntegrationStatusFn = createServerFn({ method: "GET" }).handler(async () => {
-  // A cheap probe for the step-3 tables, so screens can say when the migration is missing.
-  const probe = await getServerSupabase().from("answer_log").select("id").limit(1);
+  // Cheap probes for what step 3 adds, so screens can say when the migration is missing
+  // or needs re-running.
+  const db = getServerSupabase();
+  const [tables, matchColumn] = await Promise.all([
+    db.from("answer_log").select("id").limit(1),
+    db.from("transcripts").select("client_matched_by").limit(1),
+  ]);
   return {
     gemini: hasGeminiKey(),
     geminiModel: process.env["GEMINI_MODEL"] || DEFAULT_GEMINI_MODEL,
     supabaseSecretKey: hasSecretKey(),
-    step3Migration: !probe.error,
+    step3Migration: !tables.error && !matchColumn.error,
     email: hasEmailConfig(),
     zoomWebhook: Boolean(process.env["ZOOM_WEBHOOK_SECRET_TOKEN"]),
     ingestWebhook: Boolean(process.env["INGEST_WEBHOOK_SECRET"]),
@@ -177,20 +182,44 @@ const optionalText = z
   .optional()
   .transform((v) => (v ? v : null));
 
+const newClientSchema = z.object({
+  clientName: z.string().trim().min(1, "Client name is required"),
+  contactName: optionalText,
+  organization: optionalText,
+  parcelAddress: z.string().trim().min(1, "Parcel address is required"),
+  city: optionalText,
+  state: z.enum(CLIENT_STATES),
+  email: optionalText,
+});
+
+async function registerClient(c: z.infer<typeof newClientSchema>): Promise<ClientRow> {
+  const { data: created, error } = await getServerSupabase()
+    .from("clients")
+    .insert({
+      client_name: c.clientName,
+      contact_name: c.contactName,
+      organization: c.organization ?? c.clientName,
+      email: c.email,
+      parcel_address: c.parcelAddress,
+      city: c.city ?? "",
+      state: c.state,
+    })
+    .select()
+    .single();
+  if (error) throw dbError(error, "Could not register client");
+  await logActivity({
+    action: "Client registered",
+    subject: created.parcel_address,
+    detail: `${created.client_name} · ${created.state}`,
+    status: "updated",
+  });
+  return created;
+}
+
 const ingestSchema = z
   .object({
     clientId: z.string().min(1).optional(),
-    newClient: z
-      .object({
-        clientName: z.string().trim().min(1, "Client name is required"),
-        contactName: optionalText,
-        organization: optionalText,
-        parcelAddress: z.string().trim().min(1, "Parcel address is required"),
-        city: optionalText,
-        state: z.enum(CLIENT_STATES),
-        email: optionalText,
-      })
-      .optional(),
+    newClient: newClientSchema.optional(),
     meetingType: z.enum(["meeting_1", "meeting_2"]),
     source: z.enum(["Granola", "Zoom"]),
     rawText: z.string().trim().min(1, "Paste the call transcript"),
@@ -204,28 +233,7 @@ export const ingestTranscriptFn = createServerFn({ method: "POST" })
 
     let client: ClientRow | null;
     if (data.newClient) {
-      const c = data.newClient;
-      const { data: created, error } = await db
-        .from("clients")
-        .insert({
-          client_name: c.clientName,
-          contact_name: c.contactName,
-          organization: c.organization ?? c.clientName,
-          email: c.email,
-          parcel_address: c.parcelAddress,
-          city: c.city ?? "",
-          state: c.state,
-        })
-        .select()
-        .single();
-      if (error) throw dbError(error, "Could not register client");
-      client = created;
-      await logActivity({
-        action: "Client registered",
-        subject: created.parcel_address,
-        detail: `${created.client_name} · ${created.state}`,
-        status: "updated",
-      });
+      client = await registerClient(data.newClient);
     } else {
       client = await getClient(data.clientId ?? null);
       if (!client) throw new Error("That client no longer exists.");
@@ -630,13 +638,17 @@ export const approveTranscriptFn = createServerFn({ method: "POST" })
   });
 
 /** Links an imported transcript (Zoom, Granola, webhook) to a client deal. */
+/** Links a call to an existing client or one registered on the spot; also changes a link. */
 export const assignTranscriptFn = createServerFn({ method: "POST" })
   .validator(
-    z.object({
-      transcriptId: z.string().min(1),
-      clientId: z.string().min(1),
-      meetingType: z.enum(["meeting_1", "meeting_2", "ad_hoc"]),
-    }),
+    z
+      .object({
+        transcriptId: z.string().min(1),
+        clientId: z.string().min(1).optional(),
+        newClient: newClientSchema.optional(),
+        meetingType: z.enum(["meeting_1", "meeting_2", "ad_hoc"]),
+      })
+      .refine((d) => d.clientId || d.newClient, "Choose a client or register a new one."),
   )
   .handler(async ({ data }) => {
     const db = getServerSupabase();
@@ -646,7 +658,9 @@ export const assignTranscriptFn = createServerFn({ method: "POST" })
     if (transcript.meeting_type === "funding_feed") {
       throw new Error("Funding opportunities aren't tied to a client.");
     }
-    const client = await getClient(data.clientId);
+    const client = data.newClient
+      ? await registerClient(data.newClient)
+      : await getClient(data.clientId ?? null);
     if (!client) throw new Error("That client no longer exists.");
 
     const location = [client.parcel_address, client.city].filter(Boolean).join(", ");
@@ -657,6 +671,8 @@ export const assignTranscriptFn = createServerFn({ method: "POST" })
         project_label: `${location}, ${client.state}`,
         organization: client.organization,
         meeting_type: data.meetingType,
+        // A person chose this client, so the call no longer counts as linked automatically.
+        ...(transcript.client_matched_by ? { client_matched_by: null } : {}),
       })
       .eq("id", transcript.id)
       .select()
@@ -671,7 +687,10 @@ export const assignTranscriptFn = createServerFn({ method: "POST" })
       throw dbError(items.error, "Transcript assigned, but its items kept no client");
 
     await logActivity({
-      action: "Transcript assigned to client",
+      action:
+        transcript.client_id && transcript.client_id !== client.id
+          ? "Transcript moved to another client"
+          : "Transcript assigned to client",
       subject: client.parcel_address,
       detail: `${transcript.source} · ${meetingLabel(data.meetingType)} · ${client.client_name}`,
       status: "updated",

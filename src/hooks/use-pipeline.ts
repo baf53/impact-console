@@ -155,8 +155,9 @@ export function useArrivals() {
     const [first] = fresh;
     if (fresh.length === 1 && first) {
       toast.info(`New ${ARRIVAL_NOUNS[first.source]} in Intake`, {
+        // Imports have no manual step, so a client here was found automatically.
         description: first.client_id
-          ? first.project_label
+          ? `${first.project_label} · client linked automatically, check it's right`
           : `${first.project_label} · not linked to a client yet`,
         duration: 20_000,
         action: {
@@ -351,15 +352,16 @@ export function useApproveTranscript() {
 export function useAssignTranscript() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (vars: {
-      transcriptId: string;
-      clientId: string;
-      meetingType: "meeting_1" | "meeting_2" | "ad_hoc";
-    }) => assignTranscriptFn({ data: vars }),
-    onSuccess: (transcript) => {
+    mutationFn: (vars: Parameters<typeof assignTranscriptFn>[0]["data"]) =>
+      assignTranscriptFn({ data: vars }),
+    onSuccess: (transcript, vars) => {
       queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() });
+      queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.clients() });
+      queryClient.invalidateQueries({ queryKey: DEALS_KEY });
       invalidateFeeds(queryClient);
-      toast.success("Transcript assigned", { description: transcript.project_label });
+      toast.success(vars.newClient ? "Client created and call linked" : "Transcript assigned", {
+        description: transcript.project_label,
+      });
     },
     onError: (err) =>
       toast.error("Could not assign transcript", { description: errorMessage(err) }),

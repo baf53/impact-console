@@ -739,6 +739,7 @@ function PipelinePage() {
   useEffect(() => {
     if (linkedId) setSelected({ kind: "transcript", id: linkedId });
   }, [linkedId]);
+  const [changingClientFor, setChangingClientFor] = useState<string | null>(null);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [dragging, setDragging] = useState<CardRef | null>(null);
@@ -1067,11 +1068,41 @@ function PipelinePage() {
                   <ApprovedSummary transcript={selectedTranscript} programs={programs} />
                 )}
 
-                {!selectedTranscript.client_id &&
-                  selectedTranscript.meeting_type !== "funding_feed" &&
-                  !isApproved && (
-                    <AssignTranscript transcript={selectedTranscript} clients={clients} />
-                  )}
+                {selectedTranscript.meeting_type !== "funding_feed" &&
+                  !isApproved &&
+                  (!selectedTranscript.client_id || changingClientFor === selectedTranscript.id ? (
+                    <AssignTranscript
+                      key={selectedTranscript.id}
+                      transcript={selectedTranscript}
+                      clients={clients}
+                      onDone={() => setChangingClientFor(null)}
+                    />
+                  ) : (
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border bg-muted/30 px-3 py-2 text-xs">
+                      <span className="flex min-w-0 flex-wrap items-center gap-2">
+                        <span className="text-muted-foreground">Client:</span>
+                        <span className="font-medium text-foreground">
+                          {selectedClient?.client_name ?? selectedTranscript.organization}
+                        </span>
+                        {selectedTranscript.client_matched_by === "meeting_name" && (
+                          <Badge
+                            variant="outline"
+                            className="border-primary/30 text-[10px] text-primary"
+                          >
+                            Linked automatically from the meeting name
+                          </Badge>
+                        )}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-primary"
+                        onClick={() => setChangingClientFor(selectedTranscript.id)}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  ))}
 
                 <div className="mt-4 space-y-7">
                   {groups.map((group) => {
