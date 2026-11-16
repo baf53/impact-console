@@ -22,7 +22,7 @@ Run these in Supabase → SQL Editor, in order:
 
 1. `supabase_step1_migration.sql`: core tables (already done).
 2. `supabase_reset_demo_data.sql`: clears demo and test data (one-off).
-3. `supabase_step3_features.sql`: tables for the Answer Log, Golden Set and Grants.gov feed. Safe to run at any time.
+3. `supabase_step3_features.sql`: tables for the Answer Log, Golden Set and Grants.gov feed, and the column behind automatic client matching. Safe to run at any time, and to run again: re-run it whenever the Dashboard's **Feature tables** item asks you to.
 4. `supabase_step2_security.sql`: locks down public access. Run it **after** `SUPABASE_SECRET_KEY` is set everywhere the console runs.
 
 ## Zoom: automatic transcript import
@@ -36,7 +36,15 @@ When a cloud recording's transcript is ready, Zoom sends it to the console and i
 5. Copy the app's **Secret Token** into `ZOOM_WEBHOOK_SECRET_TOKEN`, deploy, then click **Validate** in Zoom. The console answers Zoom's validation challenge automatically.
 6. If Zoom offers to include a download token in the event payload, turn it on. The console uses it to fetch the transcript file.
 
-Zoom calls aren't linked to a client automatically. Open the card in Intake, choose the client and meeting stage under **Not linked to a client**, then run AI extraction.
+### Linking calls to clients
+
+A Zoom call is linked to a client automatically when its meeting name contains exactly one client's full contact or client name, for example "Robert Washington and Bria Francisco". The card then says **Linked automatically from the meeting name**; click **Change** if it picked the wrong client.
+
+The console never guesses:
+- **Several clients share the name:** the call stays unlinked, and the card offers those clients as suggestions.
+- **No client matches:** the call stays unlinked. This includes Zoom's default "Bria Francisco's Zoom Meeting" names, which only contain the host.
+
+For an unlinked call, open the card and pick a suggestion or an existing client. For a first call with a new prospect, use **+ New client**: it registers the client and links the call in one step, and their later calls link themselves. Then run AI extraction.
 
 Whenever a call arrives on its own (from Zoom or the webhook below), the console shows a notice with an **Open** button on whatever page you're on. The sidebar's **Pipeline** item also shows how many cards are waiting in Intake. The console checks every 30 seconds and when you return to its tab. Calls that arrived while it was closed are announced on your next visit.
 

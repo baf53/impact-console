@@ -3,7 +3,8 @@
 --
 -- Adds the tables behind the Answer Log, Golden Set and Grants.gov feed,
 -- and an external_id on transcripts so automatic imports (Zoom, Granola,
--- Grants.gov) are never saved twice. Safe to run before or after step 2.
+-- Grants.gov) are never saved twice. Safe to run before or after step 2,
+-- and safe to run again: re-run it after updates that add to this file.
 -- Every table here is private: RLS is on with no public policies, and only
 -- the console's server (secret key) can read or write them.
 -- ====================================================================
@@ -59,6 +60,10 @@ create table if not exists public.funding_feed_dismissed (
 alter table public.transcripts add column if not exists external_id text;
 create unique index if not exists transcripts_external_id_key
     on public.transcripts (external_id) where external_id is not null;
+
+-- How an imported call got its client: 'meeting_name' when the console linked it
+-- automatically from the meeting's name, so the card can say so. Null otherwise.
+alter table public.transcripts add column if not exists client_matched_by text;
 
 -- --------------------------------------------------------------------
 -- 5. PRIVATE BY DEFAULT

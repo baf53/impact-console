@@ -108,7 +108,7 @@ function SetupChecklist() {
     {
       label: "Feature tables",
       ok: data?.step3Migration,
-      on: "Answer Log, Golden Set and Grants.gov tables ready",
+      on: "Answer Log, Golden Set, Grants.gov feed and client matching ready",
       off: "Run supabase_step3_features.sql in the Supabase SQL Editor",
     },
     {
