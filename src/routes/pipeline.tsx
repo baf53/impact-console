@@ -16,7 +16,7 @@ import {
   Undo2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AssignTranscript } from "@/components/assign-transcript";
@@ -78,6 +78,8 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/pipeline")({
+  validateSearch: (search: Record<string, unknown>): { transcript?: string } =>
+    typeof search["transcript"] === "string" ? { transcript: search["transcript"] } : {},
   head: () => ({
     meta: [
       { title: "Pipeline — Collective Impact" },
@@ -728,8 +730,15 @@ function PipelinePage() {
   const runExtraction = useRunExtraction();
   const deleteTranscript = useDeleteTranscript();
 
+  // A link such as the new-call notice can name the card to open.
+  const { transcript: linkedId } = Route.useSearch();
   // undefined = nothing chosen yet (show the newest card); null = the panel was closed.
-  const [selected, setSelected] = useState<CardRef | null | undefined>(undefined);
+  const [selected, setSelected] = useState<CardRef | null | undefined>(
+    linkedId ? { kind: "transcript", id: linkedId } : undefined,
+  );
+  useEffect(() => {
+    if (linkedId) setSelected({ kind: "transcript", id: linkedId });
+  }, [linkedId]);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [dragging, setDragging] = useState<CardRef | null>(null);

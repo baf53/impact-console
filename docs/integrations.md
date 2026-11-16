@@ -38,6 +38,8 @@ When a cloud recording's transcript is ready, Zoom sends it to the console and i
 
 Zoom calls aren't linked to a client automatically. Open the card in Intake, choose the client and meeting stage under **Not linked to a client**, then run AI extraction.
 
+Whenever a call arrives on its own (from Zoom or the webhook below), the console shows a notice with an **Open** button on whatever page you're on. The sidebar's **Pipeline** item also shows how many cards are waiting in Intake. The console checks every 30 seconds and when you return to its tab. Calls that arrived while it was closed are announced on your next visit.
+
 ## Granola, or any other tool: webhook import
 
 The console accepts transcripts at `POST https://<your-console-domain>/api/ingest/transcript`. Granola can send to it through an automation tool such as Zapier, Make or n8n, if your Granola plan includes that kind of integration. Configure the automation's "webhook / HTTP request" step like this:
@@ -61,7 +63,7 @@ Only `text` is required.
 - `client_email` (or `client_id`) links the call to an existing client.
 - `meeting_type` can be `meeting_1`, `meeting_2` or `ad_hoc`.
 - `source` can be `Granola`, `Zoom` or `Manual`.
-- `external_id` stops the same note being imported twice; it needs step 3.
+- `external_id` stops the same note being imported twice; it needs step 3. Without one, the console assigns its own, so a resent note arrives twice.
 
 To test from a terminal:
 

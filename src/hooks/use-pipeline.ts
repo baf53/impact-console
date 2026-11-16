@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import {
@@ -14,6 +16,7 @@ import {
   createOpportunityFn,
   getIntegrationStatusFn,
   ingestTranscriptFn,
+  listArrivalsFn,
   listClientsFn,
   listProgramsFn,
   listTranscriptsFn,
@@ -27,6 +30,7 @@ export const PIPELINE_KEYS = {
   clients: () => [...PIPELINE_KEYS.all, "clients"] as const,
   transcripts: () => [...PIPELINE_KEYS.all, "transcripts"] as const,
   status: () => [...PIPELINE_KEYS.all, "integration-status"] as const,
+  arrivals: () => [...PIPELINE_KEYS.all, "arrivals"] as const,
 };
 
 /** Shared with the Knowledge Base and Dashboard so approvals refresh them too. */
@@ -90,6 +94,86 @@ function addToBoard(queryClient: QueryClient, transcript: TranscriptRow) {
 
 export function usePrograms() {
   return useQuery({ queryKey: PROGRAMS_KEY, queryFn: () => listProgramsFn() });
+}
+
+/* -------------------------------- arrivals -------------------------------- */
+
+// Per browser: where the last check stopped, so calls that arrive while the console is
+// closed are announced on the next visit. Falls back to memory if storage is blocked.
+const ARRIVALS_CURSOR_KEY = "ci.arrivalsCursor";
+let memoryCursor: string | null = null;
+const announced = new Set<string>();
+
+function readArrivalsCursor() {
+  try {
+    return window.localStorage.getItem(ARRIVALS_CURSOR_KEY) ?? memoryCursor;
+  } catch {
+    return memoryCursor;
+  }
+}
+
+function writeArrivalsCursor(cursor: string) {
+  memoryCursor = cursor;
+  try {
+    window.localStorage.setItem(ARRIVALS_CURSOR_KEY, cursor);
+  } catch {
+    // Storage blocked: the in-memory cursor still covers this visit.
+  }
+}
+
+const ARRIVAL_NOUNS: Record<TranscriptRow["source"], string> = {
+  Zoom: "Zoom call",
+  Granola: "Granola notes",
+  Manual: "transcript",
+  "Grants.gov": "funding opportunity",
+};
+
+/**
+ * Checks every 30 seconds (and when the tab regains focus) for calls that arrived on
+ * their own, announces them wherever you are in the console, and returns the number of
+ * cards waiting in Intake.
+ */
+export function useArrivals() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { data } = useQuery({
+    queryKey: PIPELINE_KEYS.arrivals(),
+    queryFn: () => listArrivalsFn({ data: { since: readArrivalsCursor() } }),
+    refetchInterval: 30_000,
+  });
+
+  useEffect(() => {
+    if (!data) return;
+    writeArrivalsCursor(data.cursor);
+    const fresh = data.arrivals.filter((t) => !announced.has(t.id));
+    if (fresh.length === 0) return;
+    for (const t of fresh) announced.add(t.id);
+
+    queryClient.invalidateQueries({ queryKey: PIPELINE_KEYS.transcripts() });
+    invalidateFeeds(queryClient);
+
+    const [first] = fresh;
+    if (fresh.length === 1 && first) {
+      toast.info(`New ${ARRIVAL_NOUNS[first.source]} in Intake`, {
+        description: first.client_id
+          ? first.project_label
+          : `${first.project_label} · not linked to a client yet`,
+        duration: 20_000,
+        action: {
+          label: "Open",
+          onClick: () => navigate({ to: "/pipeline", search: { transcript: first.id } }),
+        },
+      });
+    } else {
+      toast.info(`${fresh.length} new calls in Intake`, {
+        description: "They arrived automatically and are waiting for review.",
+        duration: 20_000,
+        action: { label: "Open Pipeline", onClick: () => navigate({ to: "/pipeline" }) },
+      });
+    }
+  }, [data, navigate, queryClient]);
+
+  return data?.intakeCount ?? 0;
 }
 
 /* -------------------------------- mutations ------------------------------- */
